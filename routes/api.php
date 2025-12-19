@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AreaController;
 
 Route::middleware(GuestMiddleware::class)->group(function(){
     Route::post('login',[AuthController::class,'login']);
@@ -66,6 +67,10 @@ Route::middleware(['auth:api','active.user', AuthMiddleware::class, 'module.perm
     Route::delete('/users/{id}/delete', [UserController::class, 'destroy'])->name('users.destroy');
     Route::get('/users/stats', [UserController::class, 'stats'])->name('users.stats');
     Route::post('auth/refresh', [AuthController::class, 'refresh']);
+
+    Route::get('areas',[AreaController::class,'index'])->name('area.index');
+    Route::post('areas/store',[AreaController::class,'store'])->name('area.store');
+    Route::patch('/areas/{id}/status', [AreaController::class, 'status']);
 });
 
 

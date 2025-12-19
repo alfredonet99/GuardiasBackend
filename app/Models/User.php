@@ -21,7 +21,8 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'avatar',
-        'activo'
+        'activo',
+        'area_id'
     ];
 
     protected $hidden = [
@@ -62,6 +63,10 @@ class User extends Authenticatable implements JWTSubject
         return [
             "test" => "hola"
         ];
+    }
+
+    public function area(){
+        return $this->belongsTo(Area::class);
     }
 
 }
