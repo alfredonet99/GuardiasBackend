@@ -14,7 +14,22 @@ class ProfileController extends Controller
     // ===============================
     public function show(Request $request)
     {
-        return response()->json($request->user()->load('roles'));
+        $user = $request->user();
+
+    Log::info('🟩 [PROFILE:SHOW] HIT desde front', [
+        'user_id'   => $user?->id,
+        'email'     => $user?->email,
+        'area_id'   => $user?->area_id,
+        'ip'        => $request->ip(),
+        'method'    => $request->method(),
+        'url'       => $request->fullUrl(),
+        'ua'        => substr((string) $request->userAgent(), 0, 180),
+        'has_token' => $request->bearerToken() ? true : false,
+    ]);
+
+    return response()->json(
+        $user->load(['area:id,name'])
+    );
     }
 
      public function update(Request $request)
@@ -26,7 +41,6 @@ class ProfileController extends Controller
             'avatar' => ['nullable', 'url'],
         ]);
 
-        // Solo actualizamos lo permitido
         $user->name = $request->name;
 
         if ($request->filled('avatar')) {
@@ -35,9 +49,14 @@ class ProfileController extends Controller
 
         $user->save();
 
+        $user->load([
+            'roles:id,name',
+            'area:id,name',
+        ]);
+
         return response()->json([
             'message' => 'Perfil actualizado correctamente',
-            'user'    => $user->load('roles'),
+            'user'    => $user,
         ]);
     }
 
