@@ -54,7 +54,8 @@ Route::middleware(['auth:api','active.user', AuthMiddleware::class, 'module.perm
 
     Route::get('/system/logs', [SystemLogController::class, 'index']);
     
-    Route::get('profile',[AuthController::class,'profile']);
+    //Route::get('profile',[AuthController::class,'profile']);
+
     Route::get('users',[UserController::class,'index'])->name('users.index');
     Route::get('/users/crear', [UserController::class, 'create'])->name('users.create');
     Route::post('/users/store',[UserController::class,'store'])->name('users.store');
@@ -71,6 +72,7 @@ Route::middleware(['auth:api','active.user', AuthMiddleware::class, 'module.perm
     Route::get('areas',[AreaController::class,'index'])->name('area.index');
     Route::post('areas/store',[AreaController::class,'store'])->name('area.store');
     Route::patch('/areas/{id}/status', [AreaController::class, 'status']);
+    Route::delete('/areas/{id}/delete', [AreaController::class, 'destroy'])->name('area.destroy');
 });
 
 

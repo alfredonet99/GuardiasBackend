@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
+
 class RoleController extends Controller
 {
     private function requireAdmin(): void
@@ -16,23 +17,31 @@ class RoleController extends Controller
         }
     }
     public function index()
-{
-    info("📌 [ROLES] Listando todos los roles...");
+    {
+        $authUser = auth('api')->user();
+        $isAdmin  = $authUser?->isAdmin() ?? false;
 
-    $authUser = auth('api')->user();
-    $isAdmin  = $authUser?->isAdmin() ?? false;
+        $query = Role::query()
+            ->select(['id','name','guard_name'])
+            ->where('guard_name', 'api')
+            ->orderBy('name');
 
-    $roles = Role::query()
-        ->when(!$isAdmin, function ($q) {
-            $q->where('name', '!=', 'Administrador');
-        })
-        ->orderBy('name')
-        ->get();
+        if ($isAdmin) {
+            $roles = $query->get();
+            return response()->json($roles, 200);
+        }
 
-    info("📌 [ROLES] Total roles encontrados: " . $roles->count());
+        $areaId = (int) ($authUser->area_id ?? 0);
 
-    return response()->json($roles);
-}
+        $roleIds = $this->roleIdsForArea($areaId);
+
+        $roles = $query
+            ->whereIn('id', $roleIds)
+            ->where('name', '!=', 'Administrador') // candado extra
+            ->get();
+
+        return response()->json($roles, 200);
+    }
 
 
      public function create()
@@ -80,136 +89,200 @@ class RoleController extends Controller
 
 
 
-    public function edit($id)
-    {
-        $authUser = auth('api')->user();
-        $isAdmin  = $authUser?->isAdmin() ?? false;
-        $restricted = ['console.', 'permisos.', 'roles.', 'users.'];
+   public function edit($id)
+{
+    $authUser = auth('api')->user();
+    $isAdmin  = $authUser?->isAdmin() ?? false;
 
-        $role = Role::with('permissions:id,name')->findOrFail($id);
+    $restricted = ['console.', 'permisos.', 'roles.', 'users.','area'];
 
-        if ($isAdmin) {
-            $allPermissions = Permission::orderBy('name')->get();
+    // ✅ Regla: no-admin NUNCA ve permisos *.delete
+    $isDeletePerm = fn (string $name) => str_ends_with($name, '.delete');
 
-            return response()->json([
-                'role' => $role,
-                'permissions' => $allPermissions,
-                'assigned_permissions' => $role->permissions->pluck('name')->values(),
-                'can_rename' => true,
-            ], 200);
+    $role = Role::with('permissions:id,name')->findOrFail($id);
+
+    if (!$isAdmin && $role->name === 'Administrador') {
+        abort(403, 'No tienes permiso para editar el rol Administrador.');
+    }
+
+    if (!$isAdmin) {
+        $myAreaId = (int) ($authUser->area_id ?? 0);
+        if (!$myAreaId) abort(403, 'Tu usuario no tiene un área asignada.');
+
+        $roleAreaId = (int) ($this->areaIdFromRoleId((int) $role->id) ?? 0);
+        if (!$roleAreaId) abort(403, 'Este rol no tiene un área configurada.');
+
+        if ($roleAreaId !== $myAreaId) {
+            abort(403, 'No puedes editar roles de otra área.');
         }
+    }
 
-        $allPermissions = Permission::query()
-            ->where(function ($q) use ($restricted) {
-                foreach ($restricted as $prefix) {
-                    $q->where('name', 'NOT LIKE', $prefix . '%');
-                }
-            })
-            ->orderBy('name')
-            ->get();
-
-        $assignedAllowed = $role->permissions
-            ->pluck('name')
-            ->filter(function ($name) use ($restricted) {
-                foreach ($restricted as $prefix) {
-                    if (str_starts_with($name, $prefix)) return false;
-                }
-                return true;
-            })
-            ->values();
+    if ($isAdmin) {
+        $allPermissions = Permission::orderBy('name')->get();
 
         return response()->json([
-            'role' => $role->only(['id','name','guard_name']),
+            'role' => $role,
             'permissions' => $allPermissions,
-            'assigned_permissions' => $assignedAllowed,
-            'can_rename' => false,
+            'assigned_permissions' => $role->permissions->pluck('name')->values(),
+            'can_rename' => true,
         ], 200);
     }
 
-    public function update(Request $request, $id)
-    {
-
-        $authUser = auth('api')->user();
-        $isAdmin  = $authUser?->isAdmin() ?? false;
-
-        $restricted = ['console.', 'permisos.', 'roles.', 'users.'];
-
-        $role = Role::with('permissions:id,name')->findOrFail($id);
-
-        if ($request->has('name')) {
-            abort(403, 'No tienes permiso para renombrar roles.');
-        }
-
-        $data = $request->validate([
-            'permissions'   => ['nullable', 'array'],
-            'permissions.*' => ['string'],
-        ]);
-
-        $permissions = $data['permissions'] ?? [];
-
-        if (!$isAdmin) {
-
-            $isRestricted = function (string $name) use ($restricted) {
-                foreach ($restricted as $prefix) {
-                    if (str_starts_with($name, $prefix)) return true;
-                }
-                return false;
-            };
-
-            $triedRestricted = collect($permissions)->first(fn ($p) => $isRestricted($p));
-            if ($triedRestricted) {
-                abort(403, 'No tienes permiso para asignar permisos de administración del sistema.');
+    // ✅ No-admin: sin console/permisos/roles/users y sin *.delete
+    $allPermissions = Permission::query()
+        ->where(function ($q) use ($restricted) {
+            foreach ($restricted as $prefix) {
+                $q->where('name', 'NOT LIKE', $prefix . '%');
             }
+        })
+        ->where('name', 'NOT LIKE', '%.delete') // 👈 clave
+        ->orderBy('name')
+        ->get();
 
-            $keepRestricted = $role->permissions
-                ->pluck('name')
-                ->filter(fn ($p) => $isRestricted($p))
-                ->values()
-                ->all();
+    $assignedAllowed = $role->permissions
+        ->pluck('name')
+        ->filter(function ($name) use ($restricted, $isDeletePerm) {
+            if ($isDeletePerm($name)) return false; // 👈 clave
+            foreach ($restricted as $prefix) {
+                if (str_starts_with($name, $prefix)) return false;
+            }
+            return true;
+        })
+        ->values();
 
-            $allowedIncoming = collect($permissions)
-                ->reject(fn ($p) => $isRestricted($p))
-                ->values()
-                ->all();
+    return response()->json([
+        'role' => $role->only(['id','name','guard_name']),
+        'permissions' => $allPermissions,
+        'assigned_permissions' => $assignedAllowed,
+        'can_rename' => false,
+    ], 200);
+}
 
-            $permissions = collect($keepRestricted)
-                ->merge($allowedIncoming)
-                ->unique()
-                ->values()
-                ->all();
+
+    public function update(Request $request, $id)
+{
+    $authUser = auth('api')->user();
+    $isAdmin  = $authUser?->isAdmin() ?? false;
+
+    $restricted = ['console.', 'permisos.', 'roles.', 'users.'];
+    $isDeletePerm = fn (string $name) => str_ends_with($name, '.delete');
+
+    $role = Role::with('permissions:id,name')->findOrFail($id);
+
+    if ($request->has('name')) {
+        abort(403, 'No tienes permiso para renombrar roles.');
+    }
+
+    // ✅ mismo candado por área que en edit (para no-admin)
+    if (!$isAdmin) {
+        if ($role->name === 'Administrador') abort(403, 'No puedes editar el rol Administrador.');
+
+        $myAreaId = (int) ($authUser->area_id ?? 0);
+        if (!$myAreaId) abort(403, 'Tu usuario no tiene un área asignada.');
+
+        $roleAreaId = (int) ($this->areaIdFromRoleId((int) $role->id) ?? 0);
+        if (!$roleAreaId) abort(403, 'Este rol no tiene un área configurada.');
+
+        if ($roleAreaId !== $myAreaId) abort(403, 'No puedes editar roles de otra área.');
+    }
+
+    $data = $request->validate([
+        'permissions'   => ['nullable', 'array'],
+        'permissions.*' => ['string'],
+    ]);
+
+    $incoming = $data['permissions'] ?? [];
+
+    if (!$isAdmin) {
+        // 1) Prohibidos por prefijo (los tuyos)
+        $isRestricted = function (string $name) use ($restricted) {
+            foreach ($restricted as $prefix) {
+                if (str_starts_with($name, $prefix)) return true;
+            }
+            return false;
+        };
+
+        // 2) Prohibido: *.delete (NUNCA asignable por no-admin)
+        $triedDelete = collect($incoming)->first(fn ($p) => $isDeletePerm($p));
+        if ($triedDelete) {
+            abort(403, 'No tienes permiso para asignar permisos de tipo delete.');
         }
 
-        $role->syncPermissions($permissions);
+        $triedRestricted = collect($incoming)->first(fn ($p) => $isRestricted($p));
+        if ($triedRestricted) {
+            abort(403, 'No tienes permiso para asignar permisos de administración del sistema.');
+        }
 
-        info("🔄 [ROLES] Permisos sincronizados", ['role'     => $role->name,'permisos' => $permissions,]);
+        // ✅ conservar los restricted y los delete que el rol YA tenga
+        $keepRestricted = $role->permissions->pluck('name')->filter(fn ($p) => $isRestricted($p))->values()->all();
+        $keepDelete     = $role->permissions->pluck('name')->filter(fn ($p) => $isDeletePerm($p))->values()->all();
 
-        return response()->json(['message' => 'Rol actualizado correctamente','role'    => $role,]);
+        // ✅ permitir solo los incoming “seguros”
+        $allowedIncoming = collect($incoming)
+            ->reject(fn ($p) => $isRestricted($p) || $isDeletePerm($p))
+            ->values()
+            ->all();
+
+        $incoming = collect($keepRestricted)
+            ->merge($keepDelete)
+            ->merge($allowedIncoming)
+            ->unique()
+            ->values()
+            ->all();
     }
+
+    $role->syncPermissions($incoming);
+
+    return response()->json([
+        'message' => 'Rol actualizado correctamente',
+        'role'    => $role->fresh('permissions'),
+    ]);
+}
+
+
 
 
     public function show($id)
-    {
-        $authUser = auth('api')->user();
-        $isAdmin  = $authUser?->isAdmin() ?? false;
+{
+    $authUser = auth('api')->user();
+    $isAdmin  = $authUser?->isAdmin() ?? false;
 
-        $role = Role::with('permissions')->findOrFail($id);
+    $role = Role::with('permissions')->findOrFail($id);
 
-        if (!$isAdmin && $role->name === 'Administrador') {
-            abort(403, 'No tienes permiso para ver el rol Administrador.');
-        }
-
-        $roleData = $role->only(['id', 'name', 'guard_name']);
-
-        $assignedPermissions = $role->permissions->map(function ($perm) {
-            return [
-                'id'          => $perm->id,
-                'name'        => $perm->name,
-                'description' => $perm->description,
-            ];
-        });
-
-        return response()->json(['role' => $roleData,'permissions' => $assignedPermissions,], 200);
+    // 1) No-admin nunca puede ver Administrador
+    if (!$isAdmin && $role->name === 'Administrador') {
+        abort(403, 'No tienes permiso para ver el rol Administrador.');
     }
+
+    // 2) No-admin: solo puede ver roles de su misma área
+    if (!$isAdmin) {
+        $myAreaId = (int) ($authUser->area_id ?? 0);
+        if (!$myAreaId) abort(403, 'Tu usuario no tiene un área asignada.');
+
+        $roleAreaId = (int) ($this->areaIdFromRoleId((int) $role->id) ?? 0);
+        if (!$roleAreaId) abort(403, 'Este rol no tiene un área configurada.');
+
+        if ($roleAreaId !== $myAreaId) {
+            abort(403, 'No puedes ver roles de otra área.');
+        }
+    }
+
+    $roleData = $role->only(['id', 'name', 'guard_name']);
+
+    $assignedPermissions = $role->permissions->map(function ($perm) {
+        return [
+            'id'          => $perm->id,
+            'name'        => $perm->name,
+            'description' => $perm->description,
+        ];
+    });
+
+    return response()->json([
+        'role' => $roleData,
+        'permissions' => $assignedPermissions,
+    ], 200);
+}
+
 
 
     public function destroy($id)

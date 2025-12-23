@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\User;
+use App\Models\Area;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Hash;
@@ -12,18 +13,40 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Support\RoleAreaMapper;
 
 class UserController extends Controller
 {
-   
+   private function requireAdmin(): void
+    {
+        $user = auth('api')->user();
+        if (!($user?->isAdmin() ?? false)) {
+            abort(403, 'No tienes acceso.');
+        }
+    }
     public function index(Request $request)
     {
         $authUser = auth('api')->user();
         $isAdmin  = $authUser?->isAdmin() ?? false;
         $search = $request->input('search');
-        $query = User::query()->with('roles:id,name');
 
-        if (!$isAdmin) {
+        $query = User::query() ->with([
+            'roles:id,name',
+            'area:id,name',
+        ]);
+
+       if (!$isAdmin) {
+            $areaId = $authUser?->area_id;
+
+            if (!$areaId) {
+                return response()->json(
+                    User::query()->whereRaw('1=0')->paginate(20),
+                    200
+                );
+            }
+
+            $query->where('area_id', $areaId);
+
             $query->whereDoesntHave('roles', function ($q) {
                 $q->where('name', 'Administrador');
             });
@@ -54,6 +77,19 @@ class UserController extends Controller
         $rolesQuery = Role::orderBy('name', 'asc')->select(['id', 'name']);
 
         if (!$isAdmin) {
+            $areaId = (int) ($authUser->area_id ?? 0);
+            if (!$areaId) {
+                abort(403, 'Tu usuario no tiene un área asignada.');
+            }
+
+            $allowedRoleIds = RoleAreaMapper::roleIdsForArea($areaId);
+
+            if (empty($allowedRoleIds)) {
+                abort(403, 'No hay roles configurados para tu área.');
+            }
+
+            $rolesQuery->whereIn('id', $allowedRoleIds);
+
             $rolesQuery->where('name', '!=', 'Administrador');
         }
 
@@ -81,28 +117,76 @@ class UserController extends Controller
             abort(403, 'No tienes permiso para asignar el rol Administrador.');
         }
 
+        $role = Role::select(['id', 'name'])->where('name', $validated['role'])->firstOrFail();
+        $areaId = null;
+
+         if ($role->name !== 'Administrador') {
+            $areaId = RoleAreaMapper::areaIdFromRoleId((int) $role->id);
+            if (!$areaId) {
+                abort(422, 'No hay un área configurada para el rol seleccionado.');
+            }
+
+            if (!$isAdmin) {
+            $myAreaId = (int) ($authUser->area_id ?? 0);
+            if (!$myAreaId) abort(403, 'Tu usuario no tiene un área asignada.');
+
+            if ((int)$areaId !== (int)$myAreaId) {
+                abort(403, 'No puedes asignar roles de otra área.');
+            }
+            }
+
+            $area = Area::select(['id', 'activo'])->findOrFail($areaId);
+            
+            if (!(bool) $area->activo) {
+                abort(422, 'No puedes asignar un área inactiva.');
+            }
+        }
+
         $user = User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
             'activo'   => $validated['activo'] ?? true,
+            'area_id'  => $areaId,
         ]);
 
         $user->assignRole($validated['role']);
 
-        return response()->json(['message' => 'Usuario creado correctamente', 'user'    => $user->load('roles'),], 201);
+        return response()->json(['message' => 'Usuario creado correctamente', 'user' => $user->load(['roles:id,name','area:id,name']),], 201);
     }
 
     public function edit(string $id)
     {
-        $user = User::with('roles')->findOrFail($id);
         $authUser = auth('api')->user();
         $isAdmin  = $authUser?->isAdmin() ?? false;
-        $rolesQuery = Role::orderBy('name', 'asc')->select(['id', 'name']);
+        $user = User::with(['roles:id,name', 'area:id,name'])->findOrFail($id);
+        
+        if (!$isAdmin) {
+            if ($user->hasRole('Administrador')) {
+                abort(403, 'No tienes permiso para editar usuarios Administradores.');
+            }
+
+            // debe tener área asignada
+            $myAreaId = (int) ($authUser->area_id ?? 0);
+            if (!$myAreaId) {
+                abort(403, 'Tu usuario no tiene un área asignada.');
+            }
+
+            // no puede editar usuarios de otra área
+            if ((int) ($user->area_id ?? 0) !== $myAreaId) {
+                abort(403, 'No tienes permiso para editar usuarios de otra área.');
+            }
+        }
+
+        $rolesQuery = Role::query()
+        ->orderBy('name', 'asc')
+        ->select(['id', 'name']);
 
         if (!$isAdmin) {
-            $rolesQuery->where('name', '!=', 'Administrador');
-        }
+        $allowedRoleIds = RoleAreaMapper::roleIdsForArea((int) $authUser->area_id);
+        $rolesQuery->whereIn('id', $allowedRoleIds);
+        $rolesQuery->where('name', '!=', 'Administrador');
+    }
 
         $roles = $rolesQuery->get();
 
@@ -112,14 +196,18 @@ class UserController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $user = User::with('roles')->findOrFail($id);
         $authUser = auth('api')->user();
         $isAdmin  = $authUser?->isAdmin() ?? false;
 
-        if (!$isAdmin && $user->hasRole('Administrador')) {
-            if ($request->filled('role')) {
-                abort(403, 'No tienes permiso para cambiar el rol de un Administrador.');
-            }
+        $user = User::with(['roles:id,name', 'area:id,name'])->findOrFail($id);
+
+        if (!$isAdmin) {
+            if ($user->hasRole('Administrador')) { abort(403, 'No tienes permiso para editar usuarios Administradores.'); }
+
+            $myAreaId = (int) ($authUser->area_id ?? 0);
+            if (!$myAreaId) { abort(403, 'Tu usuario no tiene un área asignada.'); }
+
+            if ((int) ($user->area_id ?? 0) !== $myAreaId) { abort(403, 'No tienes permiso para editar usuarios de otra área.'); }
         }
 
         $rules = [
@@ -129,12 +217,12 @@ class UserController extends Controller
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
         ];
 
-        if (!$isAdmin && $request->filled('email') && $request->input('email') !== $user->email) {
-            abort(403, 'No tienes permiso para cambiar el correo.');
-        }
-
         if ($isAdmin) {
             $rules['email'] = ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)];
+        } else {
+            if ($request->filled('email') && $request->input('email') !== $user->email) {
+                abort(403, 'No tienes permiso para cambiar el correo.');
+            }
         }
 
         $validated = $request->validate($rules, ['email.unique' => 'El correo ya está registrado.',]);
@@ -143,14 +231,31 @@ class UserController extends Controller
             abort(403, 'No tienes permiso para asignar el rol Administrador.');
         }
 
-        if (!$isAdmin && $user->hasRole('Administrador') && $validated['role'] !== 'Administrador') {
-            abort(403, 'No tienes permiso para quitar el rol Administrador.');
+        $role = Role::select(['id', 'name'])
+            ->where('name', $validated['role'])
+            ->firstOrFail();
+
+        $areaId = null;
+
+        if ($role->name !== 'Administrador') {
+            $areaId = RoleAreaMapper::areaIdFromRoleId((int) $role->id);
+
+            if (!$areaId) { abort(422, 'No hay un área configurada para el rol seleccionado.'); }
+
+            if (!$isAdmin) {
+                $myAreaId = (int) ($authUser->area_id ?? 0);
+
+                if ((int) $areaId !== (int) $myAreaId) { abort(403, 'No puedes asignar roles de otra área.'); }
+            }
+
+            $area = Area::select(['id', 'activo'])->findOrFail($areaId);
+            if (!(bool) $area->activo) { abort(422, 'No puedes asignar un área inactiva.'); }
         }
 
         $user->name   = $validated['name'];
         $user->activo = $validated['activo'] ?? $user->activo;
 
-        if ($isAdmin && isset($validated['email'])) {
+        if ($isAdmin && array_key_exists('email', $validated)) {
             $user->email = $validated['email'];
         }
 
@@ -158,33 +263,54 @@ class UserController extends Controller
             $user->password = Hash::make($validated['password']);
         }
 
+        $user->area_id = $areaId; 
+
         $user->save();
 
-        if (!$isAdmin && $user->hasRole('Administrador')) {
-            $user->syncRoles(['Administrador']);
-        } else {
-            $user->syncRoles([$validated['role']]);
-        }
+        $user->syncRoles([$role->name]);
 
-        return response()->json(['message' => 'Usuario actualizado correctamente','user'    => $user->load('roles'),], 200);
+        return response()->json([
+            'message' => 'Usuario actualizado correctamente',
+            'user'    => $user->fresh()->load(['roles:id,name', 'area:id,name']),
+        ], 200);
     }
 
 
-    public function show(string $id)
+   public function show(string $id)
     {
         $authUser = auth('api')->user();
         $isAdmin  = $authUser?->isAdmin() ?? false;
-        $user = User::with('roles:id,name')->findOrFail($id);
 
+        $user = User::with(['roles:id,name', 'area:id,name'])->findOrFail($id);
+
+        // 1) Candado: NO admin no puede ver perfiles Administrador
         if (!$isAdmin && $user->hasRole('Administrador', 'api')) {
             abort(403, 'No tienes permiso para ver perfiles Administrador.');
         }
 
+        if (!$isAdmin) {
+            $myAreaId = (int) ($authUser->area_id ?? 0);
+            if (!$myAreaId) {
+                abort(403, 'Tu usuario no tiene un área asignada.');
+            }
+
+            $targetAreaId = (int) ($user->area_id ?? 0);
+            if (!$targetAreaId) {
+                abort(403, 'El usuario no tiene un área asignada.');
+            }
+
+            if ($targetAreaId !== $myAreaId) {
+                abort(403, 'No puedes ver usuarios de otra área.');
+            }
+        }
+
         $payload = [
-            'user'  => $user->only(['id','name','email','Activo','avatar']),
+            'user'  => $user->only(['id','name','email','Activo','avatar','area_id']),
+            'area'  => $user->area ? $user->area->only(['id','name']) : null,
             'roles' => $user->roles->pluck('name')->values(),
         ];
 
+        // 3) Solo admin ve permisos
         if ($isAdmin) {
             $directPermNames = $user->permissions()->pluck('name')->unique()->values();
 
@@ -237,14 +363,24 @@ class UserController extends Controller
     {
         $authUser = auth('api')->user();
         $isAdmin  = $authUser?->isAdmin() ?? false;
-        $user = User::with('roles')->findOrFail($id);
 
-        if (!$isAdmin) {
-            abort(403, 'No tienes permiso para cambiar el estatus de usuarios.');
+        $user = User::with(['roles:id,name', 'area:id,name'])->findOrFail($id);
+
+        if ($authUser && (string) $authUser->id === (string) $user->id) {
+            abort(403, 'No puedes cambiar tu propio estatus.');
         }
 
-        if ($authUser && (string)$authUser->id === (string)$user->id) {
-            abort(403, 'No puedes cambiar tu propio estatus.');
+        if (!$isAdmin) {
+            $myAreaId = (int) ($authUser->area_id ?? 0);
+            if (!$myAreaId) abort(403, 'Tu usuario no tiene un área asignada.');
+
+            $targetAreaId = (int) ($user->area_id ?? 0);
+            if (!$targetAreaId) abort(403, 'El usuario objetivo no tiene un área asignada.');
+
+            if ($targetAreaId !== $myAreaId) {
+                abort(403, 'No puedes cambiar el estatus de usuarios de otra área.');
+            }
+
         }
 
         $validated = $request->validate([
@@ -252,10 +388,12 @@ class UserController extends Controller
         ]);
 
         $user->activo = $validated['activo'];
-
         $user->save();
 
-        return response()->json(['message' => 'Estado actualizado correctamente','user'    => $user->fresh()->load('roles:id,name'),], 200);
+        return response()->json([
+            'message' => 'Estado actualizado correctamente',
+            'user'    => $user->fresh()->load(['roles:id,name', 'area:id,name']),
+        ], 200);
     }
 
 
@@ -339,10 +477,23 @@ class UserController extends Controller
 
         $base = User::query();
 
+    
         if (!$isAdmin) {
             $base->whereDoesntHave('roles', function ($q) {
                 $q->where('name', 'Administrador');
             });
+
+            $myAreaId = (int) ($authUser->area_id ?? 0);
+            if (!$myAreaId) {
+                return response()->json([
+                    'total'          => 0,
+                    'activos'        => 0,
+                    'inactivos'      => 0,
+                    'ingresaron_hoy' => 0,
+                ], 200);
+            }
+
+            $base->where('area_id', $myAreaId);
         }
 
         $total     = (clone $base)->count();
@@ -365,6 +516,7 @@ class UserController extends Controller
             'ingresaron_hoy' => $ingresaronHoy,
         ], 200);
     }
+
 
 
 }

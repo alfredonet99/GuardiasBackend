@@ -25,6 +25,11 @@ class AuthController extends Controller
 
         $user = auth('api')->user();
         $user->forceFill(['last_login_at' => now()])->save();
+        $user->load([
+            'roles:id,name',
+            'area:id,name',
+        ]);
+
         Log::info($token);
 
         return response()->json([
@@ -32,7 +37,6 @@ class AuthController extends Controller
             'token_type'  => 'bearer',
             'expires_in'  => auth('api')->factory()->getTTL() * 60,
             'user'        => $user,
-            'permissions' => $user->getAllPermissions()->pluck('name'),
         ], 200);
     }
 
@@ -62,24 +66,43 @@ class AuthController extends Controller
         }
     }
 
-    public function profile() 
-    {
-        $user = auth()->user();
-
-        return response()->json(['id' => $user->id, 'name' => $user->name, 'email' => $user->email,]);
-    }
-
-    public function me()
+    /*public function profile()
     {
         $user = auth('api')->user();
 
         return response()->json([
+            'user' => $user->load([
+                'roles:id,name',
+                'area:id,name',
+            ])->only(['id','name','email','avatar','area_id']) + [
+                // opcional: si quieres devolver area ya cargada (por load)
+            ],
+        ], 200);
+    }*/
+
+    public function me(Request $request)
+    {
+        $user = auth('api')->user();
+
+        $user->load([
+            'roles:id,name',
+            'area:id,name',
+        ]);
+
+        $includePerms = $request->boolean('perms', false);
+
+        return response()->json([
             'valid'   => true,
-            'user'    => $user->load('roles'),
+            'user'    => $user,
             'isAdmin' => $user->hasRole('Administrador'),
             'roles'   => $user->getRoleNames(),
-            'perms'   => $user->getAllPermissions()->pluck('name'),
+
+            // 👇 Solo si lo pides
+            'perms'   => $includePerms
+                ? $user->getAllPermissions()->pluck('name')->values()
+                : [],
         ], 200);
     }
+
 
 }

@@ -86,9 +86,41 @@ class AreaController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {
-        //
+{
+    $this->requireAdmin();
+
+    info("🗑 [AREAS] Intentando eliminar área ID: {$id}");
+
+    $area = Area::withCount('users')->findOrFail($id);
+
+    // 🔒 Evitar borrar si hay usuarios asignados
+    if (($area->users_count ?? 0) > 0) {
+        info("⛔ [AREAS] No se puede eliminar: área con usuarios", [
+            'id' => $area->id,
+            'name' => $area->name,
+            'users_count' => $area->users_count,
+        ]);
+
+        return response()->json([
+            'message' => 'No se puede eliminar el área porque tiene usuarios asignados.',
+        ], 409); // Conflict
     }
+
+    $areaName = $area->name;
+
+    $area->delete();
+
+    info("✅ [AREAS] Área eliminada", [
+        'id'   => $id,
+        'name' => $areaName,
+    ]);
+
+    return response()->json([
+        'message' => 'Área eliminada correctamente',
+        'area'    => ['id' => $id, 'name' => $areaName],
+    ], 200);
+}
+
 
     public function status(Request $request, $id)
     {
