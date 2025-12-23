@@ -32,11 +32,18 @@ class AuthController extends Controller
 
         Log::info($token);
 
+        $browsePermissions = $user->getAllPermissions()
+        ->pluck('name')
+        ->filter(fn ($p) => is_string($p) && str_ends_with($p, '.browse'))
+        ->values();
+
+
         return response()->json([
             'token'       => $token,
             'token_type'  => 'bearer',
             'expires_in'  => auth('api')->factory()->getTTL() * 60,
             'user'        => $user,
+            'permissions' => $browsePermissions,
         ], 200);
     }
 

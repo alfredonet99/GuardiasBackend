@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 19-12-2025 a las 01:53:30
+-- Tiempo de generación: 23-12-2025 a las 07:18:06
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -41,7 +41,100 @@ CREATE TABLE `areas` (
 
 INSERT INTO `areas` (`id`, `name`, `activo`, `created_at`, `updated_at`) VALUES
 (1, 'Operaciones Stratosphere', 1, '2025-12-18 18:16:27', '2025-12-18 23:56:18'),
-(2, 'Infraestructura Stratosphere', 1, '2025-12-19 00:52:15', '2025-12-19 00:52:15');
+(2, 'Infraestructura Stratosphere', 1, '2025-12-19 00:52:15', '2025-12-19 00:52:15'),
+(4, 'Comunicaciones Team', 1, '2025-12-19 18:14:08', '2025-12-19 18:14:08');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `c_veeam`
+--
+
+CREATE TABLE `c_veeam` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `numCV` varchar(255) NOT NULL,
+  `nameCV` varchar(255) NOT NULL,
+  `app` int(11) NOT NULL,
+  `backup` varchar(11) NOT NULL,
+  `jobs` varchar(255) NOT NULL,
+  `activo` tinyint(1) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `c_veeam`
+--
+
+INSERT INTO `c_veeam` (`id`, `numCV`, `nameCV`, `app`, `backup`, `jobs`, `activo`, `created_at`, `updated_at`) VALUES
+(1, '1687', 'Ayuntamiento de Tijuana', 1, '50.00 TB', '0', 1, '2025-11-24 18:43:36', '2025-12-23 05:19:53'),
+(2, '1685', 'LosifraSADEC', 1, '10.00 TB', '8', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(3, '1566', 'mccollect', 1, '6.00 TB', '2', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(4, '1650', 'redaitpro', 1, '6.00 TB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(5, '452', 'Fulltech', 1, '5.00 TB', '3', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(6, '491', 'Unity', 1, '5.00 TB', '9', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(7, '1651', 'IDT', 1, '4.00 TB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(8, '1598', 'WorIng', 1, '3.00 TB', '2', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(9, '620', 'INTRAVERACRUZ', 1, '3.00 TB', '4', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(10, '333', 'Trainex', 1, '2.93 TB', '5', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(11, 'INTERNO', 'dmarcos', 2, '2.44 TB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(12, '1655', 'ECOSA', 1, '2.44 TB', '2', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(13, '1672', 'datavision', 1, '2.25 TB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(14, '172', 'ARTYEN', 1, '2.00 TB', '1', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(15, '1697', 'itwtechnology', 1, '2.00 TB', '1', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(16, '203', 'CorpSoto', 1, '1.73 TB', '2', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(17, '1693', 'desarrollosresidencialesali', 1, '1.536 TB', '2', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(18, '284', 'Salle', 1, '1.41 TB', '14', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(19, '1602', 'Cesarmex', 1, '1.00 TB', '4', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(20, '1696', 'mccollect1696', 1, '1.00 TB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(21, '165', 'GUCE', 1, '750.00 GB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(22, '1688', 'Econatural', 1, '700.00 GB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(23, 'NO IDENTIFICADO', 'Jalucio', 1, '650.00 GB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(24, '1640', 'Winsnes', 1, '600.00 GB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(25, 'INTERNO', 'mvazquez', 2, '600.00 GB', '1', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(26, '1690', 'CAINTRA365', 1, '512.00 GB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(27, '1690', 'CAINTRAINM', 1, '512.00 GB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(28, '1689', 'UNOTIC365', 1, '500.00 GB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(29, '1689', 'UNOTICWORKSTATION', 1, '500.00 GB', '0', 1, '2025-11-24 18:43:36', '2025-11-24 18:43:36'),
+(30, '1643', 'VELOX', 1, '500.00 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(31, '332', 'ranchosantarita', 1, '300.00 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(32, '325', 'vegasoft', 1, '200.00 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(33, '202', 'supollo', 1, '200.00 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(34, '60', 'accescom', 1, '150.00 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(35, 'INTERNO', 'lgranillo', 2, '100.00 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(36, 'INTERNO', 'mrojas', 2, '100.00 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(37, 'INTERNO', 'CSTEST', 2, '100.00 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(38, '322', 'rsoto_kuazar', 1, '70.00 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(39, 'INTERNO', 'rjimenez', 2, '10.00 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(40, '497', 'Antal', 1, '1.00 TB', '2', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(41, '402', 'Cdetallista', 1, '5 TB', '4', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(42, '422', 'CYBORG', 1, '750 GB', '5', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(43, '435', 'Fahorro', 1, '6656 GB', '38', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(44, '1655', 'EQUIPOS COMPUTACIONALES DE OCCIDENTE SA DE CV', 1, '2500 GB', '2', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(45, '492', 'Grafiady, S.A. de C.V.', 1, '200 GB', '2', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(46, '1683', 'GRUPO ESTRATEGIA POLITICA', 1, '478 GB', '5', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(47, '137', 'innasol', 1, '3800 GB', '8', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(48, '1593', 'MARUEI DE MEXICO SA DE CV', 1, '3 TB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(49, '255', 'SERVERWARE,S.A. DE C.V.', 1, '300 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(50, '85', 'sistemasdfkmx', 1, '400 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(51, '1605', 'SOLINCO, S.A. DE C.V.', 1, '350 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(52, '443', 'UnivOri', 1, '700.00 GB', '2', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(53, '115', 'provimpn', 1, '100.00 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(54, '240', 'colombinbel', 3, '5.00 TB', '3', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(55, '1555', 'pswglobsol', 3, '4.00 TB', '8', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(56, '1593', 'MARUEI', 3, '3.00 TB', '5', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(57, '318', 'siscontah', 3, '3.00 TB', '2', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(58, '1567', 'RSSTEC', 3, '2.05 TB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(59, '131', 'TEC01SW', 3, '1.00 TB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(60, '503', 'Prodexa', 3, '1.00 TB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(61, '502', 'AlimentosCarol', 3, '1.00 TB', '5', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(62, '513', 'ANTEQUERA', 3, '900.00 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(63, '167', 'TICC', 3, '650.00 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(64, '1564', 'INSASISSO', 3, '445.00 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(65, '492', 'Grafiady', 3, '200.00 GB', '2', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(66, '36', 'coelecpa', 3, '100.00 GB', '1', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(67, '488', 'HERMES', 3, '1.70 TB', '2', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37'),
+(68, '141', 'MICROFORMAS', 3, '300.00 GB', '0', 1, '2025-11-24 18:43:37', '2025-11-24 18:43:37');
 
 -- --------------------------------------------------------
 
@@ -112,12 +205,12 @@ CREATE TABLE `model_has_roles` (
 
 INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 (4, 'App\\Models\\User', 12),
-(4, 'App\\Models\\User', 16),
-(9, 'App\\Models\\User', 13),
-(9, 'App\\Models\\User', 14),
-(9, 'App\\Models\\User', 18),
-(9, 'App\\Models\\User', 19),
-(9, 'App\\Models\\User', 20);
+(9, 'App\\Models\\User', 22),
+(9, 'App\\Models\\User', 25),
+(11, 'App\\Models\\User', 19),
+(14, 'App\\Models\\User', 24),
+(16, 'App\\Models\\User', 16),
+(16, 'App\\Models\\User', 23);
 
 -- --------------------------------------------------------
 
@@ -172,7 +265,14 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `description`, `created_a
 (36, 'area.create', 'api', 'Método que permite visualizar la sección para crear un area.', '2025-12-18 17:47:26', '2025-12-18 17:47:26'),
 (37, 'area.edit', 'api', 'Método que permite visualizar la sección para editar un area.', '2025-12-18 17:47:26', '2025-12-18 17:47:26'),
 (38, 'area.delete', 'api', 'Método que permite eliminar un area.', '2025-12-18 17:47:26', '2025-12-18 17:47:26'),
-(39, 'area.show', 'api', 'Método que permite visualizar los detalles de un area.', '2025-12-18 17:47:26', '2025-12-18 17:47:26');
+(39, 'area.show', 'api', 'Método que permite visualizar los detalles de un area.', '2025-12-18 17:47:26', '2025-12-18 17:47:26'),
+(40, 'clientnet.browse', 'api', 'Método que permite navegar en la sección clientNet.', '2025-12-21 22:16:15', '2025-12-21 22:16:15'),
+(41, 'clientnet.show', 'api', 'Método que permite visualizar los detalles de un clientNet.', '2025-12-21 22:16:15', '2025-12-21 22:16:15'),
+(42, 'clientveeam.browse', 'api', 'Método que permite navegar en la sección clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30'),
+(43, 'clientveeam.create', 'api', 'Método que permite visualizar la sección para crear un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30'),
+(44, 'clientveeam.edit', 'api', 'Método que permite visualizar la sección para editar un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30'),
+(45, 'clientveeam.delete', 'api', 'Método que permite eliminar un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30'),
+(46, 'clientveeam.show', 'api', 'Método que permite visualizar los detalles de un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30');
 
 -- --------------------------------------------------------
 
@@ -213,7 +313,12 @@ CREATE TABLE `roles` (
 
 INSERT INTO `roles` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VALUES
 (4, 'Administrador', 'api', '2025-12-06 03:55:58', '2025-12-06 03:55:58'),
-(9, 'Cloud Services Support', 'api', '2025-12-11 20:37:43', '2025-12-11 20:37:43');
+(9, 'Cloud Services Support', 'api', '2025-12-11 20:37:43', '2025-12-11 20:37:43'),
+(11, 'Service Support Cloud Coordinator', 'api', '2025-12-19 18:09:00', '2025-12-19 18:09:00'),
+(14, 'Infraestructura 1', 'api', '2025-12-19 18:10:44', '2025-12-19 18:10:44'),
+(15, 'Infraestructura 2', 'api', '2025-12-19 18:10:56', '2025-12-19 18:10:56'),
+(16, 'Comunicaciones 1', 'api', '2025-12-19 18:11:09', '2025-12-19 18:11:09'),
+(17, 'Comunicaciones 2', 'api', '2025-12-19 18:11:20', '2025-12-19 18:11:20');
 
 -- --------------------------------------------------------
 
@@ -234,14 +339,18 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (7, 4),
 (8, 4),
 (8, 9),
+(8, 11),
+(8, 14),
+(8, 15),
+(8, 16),
+(8, 17),
 (9, 4),
-(9, 9),
+(9, 11),
 (10, 4),
-(10, 9),
+(10, 11),
 (11, 4),
-(11, 9),
 (12, 4),
-(12, 9),
+(12, 11),
 (13, 4),
 (13, 7),
 (20, 4),
@@ -250,25 +359,32 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (23, 4),
 (25, 4),
 (25, 9),
+(25, 11),
 (26, 4),
 (26, 9),
 (27, 4),
 (27, 9),
+(27, 11),
 (28, 4),
 (28, 9),
 (29, 4),
 (29, 9),
+(29, 11),
 (34, 4),
+(34, 11),
 (35, 4),
-(35, 9),
 (36, 4),
-(36, 9),
 (37, 4),
-(37, 9),
 (38, 4),
-(38, 9),
 (39, 4),
-(39, 9);
+(40, 4),
+(40, 11),
+(41, 4),
+(42, 4),
+(43, 4),
+(44, 4),
+(45, 4),
+(46, 4);
 
 -- --------------------------------------------------------
 
@@ -296,13 +412,13 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `area_id`, `email_verified_at`, `password`, `avatar`, `Activo`, `remember_token`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(12, 'Alfredo Villavicencio Luis', 'avillavicencio@teamnet.com.mx', NULL, NULL, '$2y$12$tMJUclT3xI2HQfYCwgaIgOF97hGtqoc.u3w4acTJC17Bh5zp/QV0K', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/12-1765918678281.webp', 1, NULL, '2025-12-19 00:53:06', '2025-12-05 06:43:48', '2025-12-19 00:53:06'),
-(13, 'Gustavo Pruebas', 'gustavo.pruebas@example.com', NULL, NULL, '$2y$12$.bkbhE.Qft1gUhJXI3uJRu7edlVOgvJFwTRCSPoO9rbxbVv06qMGG', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-05 22:08:27', '2025-12-17 16:50:00'),
-(14, 'Marianne Hodkiewicz', 'correo.cambiado@empresa.com', NULL, '2025-12-05 22:10:14', '$2y$12$kHAZgFhwJlTIRw7rkyWnkek1aTp9Ye3cmMlNKPE3U0r0pmh/BW6Ce', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 0, 'QUheGeImvq', NULL, '2025-12-05 22:10:14', '2025-12-18 05:34:29'),
-(16, 'Bernardo Jast', 'rolando.durgan@example.net', NULL, '2025-12-05 22:10:14', '$2y$12$GeIP67KWH9oIQiAGgEk6zeLaNRA4YpIATdUHWj3FImhcsmMheJ4Rm', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, 'brfsLoHBaW', '2025-12-18 01:21:13', '2025-12-05 22:10:14', '2025-12-18 01:21:13'),
-(18, 'Dr Kyler Dare', 'andreane70@example.com', NULL, '2025-12-05 22:10:14', '$2y$12$BOoqe4yulQRy.Q/aQf0mSOwjWdZhTRt.K.3SZ/sAMW0nEuKeZCcTa', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, 'UfhqQPexre', NULL, '2025-12-05 22:10:14', '2025-12-17 23:18:43'),
-(19, 'Alfredo Villavicencio', 'alfre1230999@gmail.com', NULL, NULL, '$2y$12$Asl6VVhEKD3YVgyXQqap1e4aF01L4EpA7X/u00WAmk78Cq14p4Ynq', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/19-1765600333918.webp', 1, NULL, '2025-12-18 23:48:58', '2025-12-13 04:03:40', '2025-12-18 23:48:58'),
-(20, 'Juan Perez', 'juan.perez+test1@empresa.com', NULL, NULL, '$2y$12$AxiSEH4oni/oEE2t0x7xM.ZaL4etG..Kt5P8/UriCGo0IE3u//chi', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-16 01:57:35', '2025-12-16 01:57:35');
+(12, 'Alfredo Villavicencio Luis', 'avillavicencio@teamnet.com.mx', NULL, NULL, '$2y$12$tMJUclT3xI2HQfYCwgaIgOF97hGtqoc.u3w4acTJC17Bh5zp/QV0K', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/12-1765918678281.webp', 1, NULL, '2025-12-23 03:40:51', '2025-12-05 06:43:48', '2025-12-23 03:40:51'),
+(16, 'Bernardo Jast', 'rolando.durgan@example.net', 4, '2025-12-05 22:10:14', '$2y$12$GeIP67KWH9oIQiAGgEk6zeLaNRA4YpIATdUHWj3FImhcsmMheJ4Rm', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, 'brfsLoHBaW', '2025-12-23 03:04:08', '2025-12-05 22:10:14', '2025-12-23 03:04:08'),
+(19, 'Alfredo Villavicencio', 'alfre1230999@gmail.com', 1, NULL, '$2y$12$O86jv0RpspWBBq/iq.YZMu2Anrb6WZhHBugXCAGHUPkb23z84ZEeq', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/19-1766204795492.webp', 1, NULL, '2025-12-23 02:43:29', '2025-12-13 04:03:40', '2025-12-23 02:43:29'),
+(22, 'Pruebas Perez', 'prueba@prueba.com', 1, NULL, '$2y$12$3MiLSC0z8vnjTWtFrO9t/emZ4rA8PVPkG.kTzlLdN7pq.QePTYTY2', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:39:43', '2025-12-20 04:05:32'),
+(23, 'Pruebas Lopez', 'prueba@pruebaLo.com', 4, NULL, '$2y$12$12w69BfzkFjS7C8Y0cLoeOTXK29zCSM/FfSjLufk8kd/K6gufIbeW', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:40:42', '2025-12-19 18:40:42'),
+(24, 'Pruebas Gomez', 'prueba@pruebaGo.com', 2, NULL, '$2y$12$HlUDy7GneveFbZM3Qk7HSew.t/ITgr8O0boM9u36bgb1fJL8AjAfK', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:41:37', '2025-12-19 19:10:40'),
+(25, 'PRUEBA PRUEBA', 'alfre123099922222@gmail.com', 1, NULL, '$2y$12$pNI087abxSN28zyfzlPsK.oL5BRZVJ5nifLS5fdxLSYxM4vmHTqmu', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 20:33:36', '2025-12-19 20:33:36');
 
 --
 -- Índices para tablas volcadas
@@ -314,6 +430,12 @@ INSERT INTO `users` (`id`, `name`, `email`, `area_id`, `email_verified_at`, `pas
 ALTER TABLE `areas`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `areas_name_unique` (`name`);
+
+--
+-- Indices de la tabla `c_veeam`
+--
+ALTER TABLE `c_veeam`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `failed_jobs`
@@ -391,7 +513,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT de la tabla `areas`
 --
 ALTER TABLE `areas`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `c_veeam`
+--
+ALTER TABLE `c_veeam`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT de la tabla `failed_jobs`
@@ -409,7 +537,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT de la tabla `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT de la tabla `personal_access_tokens`
@@ -421,13 +549,13 @@ ALTER TABLE `personal_access_tokens`
 -- AUTO_INCREMENT de la tabla `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- Restricciones para tablas volcadas
