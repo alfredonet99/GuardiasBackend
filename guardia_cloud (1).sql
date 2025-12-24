@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 23-12-2025 a las 07:18:06
+-- Tiempo de generación: 24-12-2025 a las 01:58:27
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -20,6 +20,29 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `guardia_cloud`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `app_service`
+--
+
+CREATE TABLE `app_service` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `nameService` varchar(255) NOT NULL,
+  `descriptionService` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `app_service`
+--
+
+INSERT INTO `app_service` (`id`, `nameService`, `descriptionService`, `created_at`, `updated_at`) VALUES
+(1, 'VEEAM MTY', NULL, '2025-11-24 16:31:28', '2025-11-24 16:32:06'),
+(2, 'VM-BR-VEEAM', NULL, '2025-11-24 16:31:55', '2025-11-24 16:31:55'),
+(3, 'VEEAM12-QRO', NULL, '2025-11-24 16:32:36', '2025-11-24 16:32:36');
 
 -- --------------------------------------------------------
 
@@ -272,7 +295,10 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `description`, `created_a
 (43, 'clientveeam.create', 'api', 'Método que permite visualizar la sección para crear un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30'),
 (44, 'clientveeam.edit', 'api', 'Método que permite visualizar la sección para editar un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30'),
 (45, 'clientveeam.delete', 'api', 'Método que permite eliminar un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30'),
-(46, 'clientveeam.show', 'api', 'Método que permite visualizar los detalles de un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30');
+(46, 'clientveeam.show', 'api', 'Método que permite visualizar los detalles de un clientveeam.', '2025-12-23 03:47:30', '2025-12-23 03:47:30'),
+(47, 'appclient.browse', 'api', 'Método que permite navegar en la sección appclient.', '2025-12-23 23:39:49', '2025-12-23 23:39:49'),
+(48, 'appclient.create', 'api', 'Método que permite visualizar la sección para crear un appclient.', '2025-12-23 23:39:50', '2025-12-23 23:39:50'),
+(49, 'appclient.delete', 'api', 'Método que permite eliminar un appclient.', '2025-12-23 23:39:50', '2025-12-23 23:39:50');
 
 -- --------------------------------------------------------
 
@@ -378,13 +404,15 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (38, 4),
 (39, 4),
 (40, 4),
-(40, 11),
 (41, 4),
 (42, 4),
 (43, 4),
 (44, 4),
 (45, 4),
-(46, 4);
+(46, 4),
+(47, 4),
+(48, 4),
+(49, 4);
 
 -- --------------------------------------------------------
 
@@ -412,9 +440,9 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `area_id`, `email_verified_at`, `password`, `avatar`, `Activo`, `remember_token`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(12, 'Alfredo Villavicencio Luis', 'avillavicencio@teamnet.com.mx', NULL, NULL, '$2y$12$tMJUclT3xI2HQfYCwgaIgOF97hGtqoc.u3w4acTJC17Bh5zp/QV0K', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/12-1765918678281.webp', 1, NULL, '2025-12-23 03:40:51', '2025-12-05 06:43:48', '2025-12-23 03:40:51'),
-(16, 'Bernardo Jast', 'rolando.durgan@example.net', 4, '2025-12-05 22:10:14', '$2y$12$GeIP67KWH9oIQiAGgEk6zeLaNRA4YpIATdUHWj3FImhcsmMheJ4Rm', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, 'brfsLoHBaW', '2025-12-23 03:04:08', '2025-12-05 22:10:14', '2025-12-23 03:04:08'),
-(19, 'Alfredo Villavicencio', 'alfre1230999@gmail.com', 1, NULL, '$2y$12$O86jv0RpspWBBq/iq.YZMu2Anrb6WZhHBugXCAGHUPkb23z84ZEeq', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/19-1766204795492.webp', 1, NULL, '2025-12-23 02:43:29', '2025-12-13 04:03:40', '2025-12-23 02:43:29'),
+(12, 'Alfredo Villavicencio Luis', 'avillavicencio@teamnet.com.mx', NULL, NULL, '$2y$12$9oX8oCaZ0gpLtcoieL2FAOZ0kMBXhSAgVoCEEXhBP3AsLunvoOuSa', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/12-1766510823145.png', 1, NULL, '2025-12-24 00:44:11', '2025-12-05 06:43:48', '2025-12-24 00:44:11'),
+(16, 'Bernardo Jast', 'rolando.durgan@example.net', 4, '2025-12-05 22:10:14', '$2y$12$GeIP67KWH9oIQiAGgEk6zeLaNRA4YpIATdUHWj3FImhcsmMheJ4Rm', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, 'brfsLoHBaW', '2025-12-24 00:18:53', '2025-12-05 22:10:14', '2025-12-24 00:18:53'),
+(19, 'Alfredo Villavicencio', 'alfre1230999@gmail.com', 1, NULL, '$2y$12$O86jv0RpspWBBq/iq.YZMu2Anrb6WZhHBugXCAGHUPkb23z84ZEeq', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/19-1766204795492.webp', 1, NULL, '2025-12-24 00:44:59', '2025-12-13 04:03:40', '2025-12-24 00:44:59'),
 (22, 'Pruebas Perez', 'prueba@prueba.com', 1, NULL, '$2y$12$3MiLSC0z8vnjTWtFrO9t/emZ4rA8PVPkG.kTzlLdN7pq.QePTYTY2', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:39:43', '2025-12-20 04:05:32'),
 (23, 'Pruebas Lopez', 'prueba@pruebaLo.com', 4, NULL, '$2y$12$12w69BfzkFjS7C8Y0cLoeOTXK29zCSM/FfSjLufk8kd/K6gufIbeW', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:40:42', '2025-12-19 18:40:42'),
 (24, 'Pruebas Gomez', 'prueba@pruebaGo.com', 2, NULL, '$2y$12$HlUDy7GneveFbZM3Qk7HSew.t/ITgr8O0boM9u36bgb1fJL8AjAfK', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:41:37', '2025-12-19 19:10:40'),
@@ -423,6 +451,12 @@ INSERT INTO `users` (`id`, `name`, `email`, `area_id`, `email_verified_at`, `pas
 --
 -- Índices para tablas volcadas
 --
+
+--
+-- Indices de la tabla `app_service`
+--
+ALTER TABLE `app_service`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `areas`
@@ -510,6 +544,12 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT de la tabla `app_service`
+--
+ALTER TABLE `app_service`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT de la tabla `areas`
 --
 ALTER TABLE `areas`
@@ -537,7 +577,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT de la tabla `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT de la tabla `personal_access_tokens`
