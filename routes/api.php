@@ -50,6 +50,7 @@ Route::middleware(['auth:api','active.user', AuthMiddleware::class, 'module.perm
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permisos.index');
     Route::post('/permissions/crear', [PermissionController::class, 'storeIndividual']);
     Route::post('/permissions/crear-crud', [PermissionController::class, 'storeCrud']);
+    Route::get('/areas/options', [PermissionController::class, 'options']);
     
     Route::get('auth/check', function () { return response()->json(['valid' => true]); });
 

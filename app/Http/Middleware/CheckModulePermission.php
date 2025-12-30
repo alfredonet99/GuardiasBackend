@@ -32,11 +32,12 @@ class CheckModulePermission
 
         $map = [
             'index'   => 'browse',
-            'read'   =>  'show', 
+            'show'   =>  'show', 
             'create'  => 'create',
             'store'   => 'create',
             'edit'    => 'edit',
             'update'  => 'edit',
+            'status' =>  'edit',
             'destroy' => 'delete',
             'delete'  => 'delete',
             'stats'   => 'stats',

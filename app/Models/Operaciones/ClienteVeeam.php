@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Operaciones;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,5 +19,9 @@ class ClienteVeeam extends Model
         'jobs',
         'activo',
     ];
+
+    public function AppCV() {
+        return $this->belongsTo(AppService::class,'app');
+    }
 
 }

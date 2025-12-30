@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Operaciones;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +12,7 @@ class AppService extends Model
     protected $table = "app_service";
     protected $fillable = [
         'nameService',
-        'descriptionService'
+        'descriptionService',
+        'activo',
     ];
 }
