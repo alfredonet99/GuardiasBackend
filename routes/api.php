@@ -12,6 +12,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AreaController;
+use App\Http\Controllers\Operaciones\NetSuiteController;
 
 Route::middleware(GuestMiddleware::class)->group(function(){
     Route::post('login',[AuthController::class,'login']);
@@ -49,6 +50,7 @@ Route::middleware(['auth:api','active.user', AuthMiddleware::class, 'module.perm
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permisos.index');
     Route::post('/permissions/crear', [PermissionController::class, 'storeIndividual']);
     Route::post('/permissions/crear-crud', [PermissionController::class, 'storeCrud']);
+    Route::get('/areas/options', [PermissionController::class, 'options']);
     
     Route::get('auth/check', function () { return response()->json(['valid' => true]); });
 
@@ -73,6 +75,10 @@ Route::middleware(['auth:api','active.user', AuthMiddleware::class, 'module.perm
     Route::post('areas/store',[AreaController::class,'store'])->name('area.store');
     Route::patch('/areas/{id}/status', [AreaController::class, 'status']);
     Route::delete('/areas/{id}/delete', [AreaController::class, 'destroy'])->name('area.destroy');
+
+    require __DIR__ . '/apis/OperacionesRoute.php';
+
+    
 });
 
 

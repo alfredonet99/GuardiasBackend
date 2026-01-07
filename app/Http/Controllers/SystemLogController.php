@@ -30,19 +30,19 @@ class SystemLogController extends Controller
         $lines = array_reverse($lines);
 
         $parsed = [];
-        foreach ($lines as $line) {
+        foreach ($lines as $idx => $line) {
             if (trim($line) === '') continue;
 
-            // Backend filtering
             if ($search && !str_contains(strtolower($line), $search)) {
                 continue;
             }
 
             $parsed[] = [
+                'id'   => sha1($line . '|' . $idx),
                 'type' => $this->detectLogType($line),
                 'msg'  => substr($line, 0, 250),
                 'full' => $line,
-                'time' => $this->extractTime($line)
+                'time' => $this->extractTime($line),
             ];
         }
 
