@@ -516,6 +516,37 @@ class UserController extends Controller
             'ingresaron_hoy' => $ingresaronHoy,
         ], 200);
     }
+  public function UsersTicketsOp(Request $request)
+{
+    $authUser = auth('api')->user();
+
+    $users = User::query()
+        ->select(['id', 'name'])
+        ->where('area_id', 1)
+        ->where('Activo', 1)
+        // ✅ excluir admins (rol id=4 en guard api)
+        ->whereDoesntHave('roles', function ($q) {
+            $q->where('roles.id', 4)
+              ->where('roles.guard_name', 'api');
+        })
+        ->orderBy('name', 'asc')
+        ->get();
+
+    // ✅ detecta si el autenticado es admin (ajústalo a tu lógica real)
+    $isAdmin = $authUser
+        ? $authUser->roles()->where('roles.id', 4)->where('roles.guard_name', 'api')->exists()
+        : false;
+
+    return response()->json([
+        'auth' => $authUser ? [
+            'id'       => $authUser->id,
+            'name'     => $authUser->name,
+            'is_admin' => $isAdmin,
+        ] : null,
+        'users' => $users,
+    ]);
+}
+
 
 
 

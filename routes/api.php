@@ -70,6 +70,7 @@ Route::middleware(['auth:api','active.user', AuthMiddleware::class, 'module.perm
     Route::delete('/users/{id}/delete', [UserController::class, 'destroy'])->name('users.destroy');
     Route::get('/users/stats', [UserController::class, 'stats'])->name('users.stats');
     Route::post('auth/refresh', [AuthController::class, 'refresh']);
+    Route::get('users/tickets',[UserController::class,'UsersTicketsOp']);
 
     Route::get('areas',[AreaController::class,'index'])->name('area.index');
     Route::post('areas/store',[AreaController::class,'store'])->name('area.store');

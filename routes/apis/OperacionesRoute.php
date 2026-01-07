@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Operaciones\NetSuiteController;
 use App\Http\Controllers\Operaciones\ClienteVeeamController;
 use App\Http\Controllers\Operaciones\AppController;
+use App\Http\Controllers\Operaciones\TicketsController;
 
 Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('clientes/netsuite', [NetSuiteController::class, 'index']);
@@ -27,4 +28,13 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('/listaVeeam',[AppController::class,'ListVeeam']);
 
         Route::get('/guardias',[GuardiasController::class,'index']);
+        Route::post("/guardias/store",[GuardiasController::class, 'store']);
+        Route::get('/guardias/active', [GuardiasController::class, 'active']);
+
+        Route::get('/tickets',[TicketsController::class,'index']);
+        Route::post('/tickets/crear',[TicketsController::class,'store']);
+        Route::get('/tickets/{id}/editar',[TicketsController::class,'edit']);
+        Route::put('/tickets/{id}/update',[TicketsController::class,'update']);
+        Route::patch('/tickets/{id}/status', [TicketsController::class, 'StatusTicket']);
+
     });

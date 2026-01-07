@@ -13,11 +13,12 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+         $schedule->command('guardias:close-expired --minutes=1620')
+        ->everyTwoHours()
+        ->withoutOverlapping()
+        ->runInBackground();
     }
 
-    /**
-     * Register the commands for the application.
-     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
