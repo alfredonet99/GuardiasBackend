@@ -35,6 +35,7 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::post('/tickets/crear',[TicketsController::class,'store']);
         Route::get('/tickets/{id}/editar',[TicketsController::class,'edit']);
         Route::put('/tickets/{id}/update',[TicketsController::class,'update']);
+        Route::get('/tickets/{id}/ver-ticket',[TicketsController::class,'show']);
         Route::patch('/tickets/{id}/status', [TicketsController::class, 'StatusTicket']);
 
     });

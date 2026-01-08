@@ -23,185 +23,177 @@ class TicketsController extends Controller
         ];
     }
     public function index(Request $request)
-    {
-        $user    = $request->user();
-        $search  = trim((string) $request->query('search', ''));
-        $perPage = 20; 
+{
+    $user    = $request->user();
+    $search  = trim((string) $request->query('search', ''));
+    $status  = trim((string) $request->query('status', '')); // ✅ NUEVO
+    $perPage = 20;
 
-        $canSeeAll = $user?->roles()
-            ->whereIn('name', ['Administrador', 'Service Support Cloud Coordinator'])
-            ->exists();
+    $canSeeAll = $user?->roles()
+        ->whereIn('name', ['Administrador', 'Service Support Cloud Coordinator'])
+        ->exists();
 
-        $months = [
-            'enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5,
-            'junio' => 6, 'julio' => 7, 'agosto' => 8, 'septiembre' => 9,
-            'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12,
-        ];
+    $months = [
+        'enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5,
+        'junio' => 6, 'julio' => 7, 'agosto' => 8, 'septiembre' => 9,
+        'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12,
+    ];
 
-        $days = [
-            'domingo' => 1, 'lunes' => 2, 'martes' => 3,
-            'miércoles' => 4, 'miercoles' => 4,
-            'jueves' => 5, 'viernes' => 6,
-            'sábado' => 7, 'sabado' => 7,
-        ];
+    $days = [
+        'domingo' => 1, 'lunes' => 2, 'martes' => 3,
+        'miércoles' => 4, 'miercoles' => 4,
+        'jueves' => 5, 'viernes' => 6,
+        'sábado' => 7, 'sabado' => 7,
+    ];
 
-        $query = Tickets::query()
-            ->with(['creator', 'assignedUser'])
-            ->when(! $canSeeAll, function ($q) use ($user) {
-                $uid = (int) $user->id;
+    $query = Tickets::query()
+        ->with(['creator', 'assignedUser'])
+        ->when(! $canSeeAll, function ($q) use ($user) {
+            $uid = (int) $user->id;
 
-                $q->where(function ($qq) use ($uid) {
-                    $qq->where('user_create_ticket', $uid)
-                    ->orWhere('assigned_user_id', $uid);
-                });
+            $q->where(function ($qq) use ($uid) {
+                $qq->where('user_create_ticket', $uid)
+                   ->orWhere('assigned_user_id', $uid);
+            });
+        });
+
+    // ✅ FILTRO POR STATUS (select)
+    // si viene "1", "2" o "3" aplicamos where. Si viene "", no filtramos.
+    if ($status !== '' && ctype_digit($status)) {
+        $st = (int) $status;
+        if (in_array($st, [1, 2, 3], true)) {
+            $query->where('status', $st);
+        }
+    }
+
+    if ($search !== '') {
+        $qRaw = $search;
+        $q = mb_strtolower($search, 'UTF-8');
+        $qNoAccents = Str::of($q)->ascii()->toString();
+
+        $query->where(function ($w) use ($qRaw, $q, $qNoAccents, $months, $days) {
+
+            // 1) NÚMEROS: id / status / numTicket
+            if (ctype_digit($qNoAccents)) {
+                $num = (int) $qNoAccents;
+
+                $w->orWhere('id', $num)
+                  ->orWhere('status', $num);
+
+                $w->orWhere('numTicket', 'like', "%{$qNoAccents}%");
+            }
+
+            // 2) USUARIO CREADOR (nombre)
+            $w->orWhereHas('creator', function ($sub) use ($qRaw) {
+                $sub->where('name', 'like', "%{$qRaw}%");
             });
 
-        if ($search !== '') {
-            $qRaw = $search;
-            $q = mb_strtolower($search, 'UTF-8');
-            $qNoAccents = Str::of($q)->ascii()->toString();
+            // 3) STATUS (texto)
+            if (str_contains($qNoAccents, 'abierto')) {
+                $w->orWhere('status', 1);
+            }
+            if (str_contains($qNoAccents, 'concluido') || str_contains($qNoAccents, 'concluído')) {
+                $w->orWhere('status', 2);
+            }
+            if (str_contains($qNoAccents, 'anulado')) {
+                $w->orWhere('status', 3);
+            }
 
-            $query->where(function ($w) use ($qRaw, $q, $qNoAccents, $months, $days) {
-
-                // =========================
-                // 1) NÚMEROS: id / status / numTicket
-                // =========================
-                if (ctype_digit($qNoAccents)) {
-                    $num = (int) $qNoAccents;
-
-                    $w->orWhere('id', $num)
-                    ->orWhere('status', $num);
-
-                    // ✅ numTicket parcial (714 -> encuentra 71456)
-                    // Nota: no casteamos a int para no perder ceros a la izquierda (si existieran)
-                    $w->orWhere('numTicket', 'like', "%{$qNoAccents}%");
+            // 4) FECHAS (created_at)
+            $weekdayValue = null;
+            foreach ($days as $dayName => $dayValue) {
+                $dn = Str::of($dayName)->ascii()->toString();
+                if (str_contains($qNoAccents, $dn)) {
+                    $weekdayValue = $dayValue;
+                    break;
                 }
+            }
 
-                // =========================
-                // 2) USUARIO CREADOR (nombre)
-                // =========================
-                $w->orWhereHas('creator', function ($sub) use ($qRaw) {
-                    $sub->where('name', 'like', "%{$qRaw}%");
-                });
+            $dayOfMonth = null;
+            if (preg_match('/\b([1-9]|[12]\d|3[01])\b/', $qNoAccents, $dm)) {
+                $dayOfMonth = (int) $dm[1];
+            }
 
-                // =========================
-                // 3) STATUS (texto)
-                // =========================
-                if (str_contains($qNoAccents, 'abierto')) {
-                    $w->orWhere('status', 1);
+            if ($weekdayValue !== null) {
+                if ($dayOfMonth !== null) {
+                    $w->orWhereRaw('DAYOFWEEK(created_at) = ? AND DAY(created_at) = ?', [$weekdayValue, $dayOfMonth]);
+                } else {
+                    $w->orWhereRaw('DAYOFWEEK(created_at) = ?', [$weekdayValue]);
                 }
-                if (str_contains($qNoAccents, 'concluido') || str_contains($qNoAccents, 'concluído')) {
-                    $w->orWhere('status', 2);
+            }
+
+            if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})$/', $qNoAccents, $mShort)) {
+                $day = (int) $mShort[1];
+                $mon = (int) $mShort[2];
+
+                if ($day >= 1 && $day <= 31 && $mon >= 1 && $mon <= 12) {
+                    $w->orWhere(function ($qq) use ($day, $mon) {
+                        $qq->whereDay('created_at', $day)
+                           ->whereMonth('created_at', $mon);
+                    });
                 }
-                if (str_contains($qNoAccents, 'anulado')) {
-                    $w->orWhere('status', 3);
-                }
+            }
 
-                // =========================
-                // 4) FECHAS (created_at)
-                // =========================
+            if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2}|\d{4})$/', $qNoAccents, $m)) {
+                $day  = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+                $mon  = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+                $yr   = $m[3];
+                $year = strlen($yr) === 2 ? ('20' . $yr) : $yr;
 
-                // 4.1) Día de semana + opcional día del mes
-                $weekdayValue = null;
-                foreach ($days as $dayName => $dayValue) {
-                    $dn = Str::of($dayName)->ascii()->toString();
-                    if (str_contains($qNoAccents, $dn)) {
-                        $weekdayValue = $dayValue;
-                        break;
-                    }
-                }
+                $date = "{$year}-{$mon}-{$day}";
+                $w->orWhereDate('created_at', $date);
+            }
 
-                $dayOfMonth = null;
-                if (preg_match('/\b([1-9]|[12]\d|3[01])\b/', $qNoAccents, $dm)) {
-                    $dayOfMonth = (int) $dm[1];
-                }
+            if (preg_match('/\b(\d{1,2})\s+de\s+([a-záéíóú]+)\s+(?:del|de)\s+(\d{4})\b/u', $q, $m2)) {
+                $day       = str_pad($m2[1], 2, '0', STR_PAD_LEFT);
+                $monthName = Str::of($m2[2])->ascii()->toString();
+                $year      = $m2[3];
 
-                if ($weekdayValue !== null) {
-                    if ($dayOfMonth !== null) {
-                        $w->orWhereRaw('DAYOFWEEK(created_at) = ? AND DAY(created_at) = ?', [$weekdayValue, $dayOfMonth]);
-                    } else {
-                        $w->orWhereRaw('DAYOFWEEK(created_at) = ?', [$weekdayValue]);
-                    }
-                }
-
-                // ✅ 4.2) Fecha corta dd/mm o dd-mm (SIN año) => created_at por día y mes
-                // Ej: "01-02" o "01/02"
-                if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})$/', $qNoAccents, $mShort)) {
-                    $day = (int) $mShort[1];
-                    $mon = (int) $mShort[2];
-
-                    if ($day >= 1 && $day <= 31 && $mon >= 1 && $mon <= 12) {
-                        $w->orWhere(function ($qq) use ($day, $mon) {
-                            $qq->whereDay('created_at', $day)
-                            ->whereMonth('created_at', $mon);
-                        });
-                    }
-                }
-
-                // 4.3) Fecha numérica dd-mm-yy(yy) o dd/mm/yy(yy)
-                if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2}|\d{4})$/', $qNoAccents, $m)) {
-                    $day  = str_pad($m[1], 2, '0', STR_PAD_LEFT);
-                    $mon  = str_pad($m[2], 2, '0', STR_PAD_LEFT);
-                    $yr   = $m[3];
-                    $year = strlen($yr) === 2 ? ('20' . $yr) : $yr;
-
+                if (isset($months[$monthName])) {
+                    $mon  = str_pad((string) $months[$monthName], 2, '0', STR_PAD_LEFT);
                     $date = "{$year}-{$mon}-{$day}";
                     $w->orWhereDate('created_at', $date);
                 }
+            }
 
-                // 4.4) "19 de enero del 2025"
-                if (preg_match('/\b(\d{1,2})\s+de\s+([a-záéíóú]+)\s+(?:del|de)\s+(\d{4})\b/u', $q, $m2)) {
-                    $day       = str_pad($m2[1], 2, '0', STR_PAD_LEFT);
-                    $monthName = Str::of($m2[2])->ascii()->toString();
-                    $year      = $m2[3];
+            if (preg_match('/\b([a-záéíóú]+)\s+(?:del|de)\s+(20\d{2})\b/u', $q, $m3)) {
+                $monthName = Str::of($m3[1])->ascii()->toString();
+                $year      = (int) $m3[2];
 
-                    if (isset($months[$monthName])) {
-                        $mon  = str_pad((string) $months[$monthName], 2, '0', STR_PAD_LEFT);
-                        $date = "{$year}-{$mon}-{$day}";
-                        $w->orWhereDate('created_at', $date);
-                    }
+                if (isset($months[$monthName])) {
+                    $mon = (int) $months[$monthName];
+                    $w->orWhere(function ($qq) use ($mon, $year) {
+                        $qq->whereMonth('created_at', $mon)->whereYear('created_at', $year);
+                    });
                 }
+            }
 
-                // 4.5) "Enero del 2025"
-                if (preg_match('/\b([a-záéíóú]+)\s+(?:del|de)\s+(20\d{2})\b/u', $q, $m3)) {
-                    $monthName = Str::of($m3[1])->ascii()->toString();
-                    $year      = (int) $m3[2];
-
-                    if (isset($months[$monthName])) {
-                        $mon = (int) $months[$monthName];
-                        $w->orWhere(function ($qq) use ($mon, $year) {
-                            $qq->whereMonth('created_at', $mon)->whereYear('created_at', $year);
-                        });
-                    }
+            foreach ($months as $monthName => $mon) {
+                if (str_contains($qNoAccents, $monthName)) {
+                    $w->orWhereMonth('created_at', $mon);
+                    break;
                 }
+            }
 
-                // 4.6) Mes únicamente ("enero")
-                foreach ($months as $monthName => $mon) {
-                    if (str_contains($qNoAccents, $monthName)) {
-                        $w->orWhereMonth('created_at', $mon);
-                        break;
-                    }
-                }
-
-                // 4.7) Año únicamente ("2025")
-                if (preg_match('/^20\d{2}$/', $qNoAccents)) {
-                    $year = (int) $qNoAccents;
-                    $w->orWhereYear('created_at', $year);
-                }
-            });
-        }
-
-        $tickets = $query
-            ->orderByDesc('created_at')
-            ->paginate($perPage)
-            ->withQueryString();
-
-        return response()->json([
-            'tickets' => $tickets,
-            'statusTicket' => $this->statusTicket,
-            'canSeeAll' => $canSeeAll,
-        ]);
+            if (preg_match('/^20\d{2}$/', $qNoAccents)) {
+                $year = (int) $qNoAccents;
+                $w->orWhereYear('created_at', $year);
+            }
+        });
     }
+
+    $tickets = $query
+        ->orderByDesc('created_at')
+        ->paginate($perPage)
+        ->withQueryString();
+
+    return response()->json([
+        'tickets'      => $tickets,
+        'statusTicket' => $this->statusTicket,
+        'canSeeAll'    => $canSeeAll,
+    ]);
+}
+
 
 
     /**
@@ -283,18 +275,6 @@ class TicketsController extends Controller
         ], 201);
     }
 
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
    public function edit(string $id, Request $request)
     {
         $user = $request->user();
@@ -442,6 +422,50 @@ class TicketsController extends Controller
         'message' => 'Ticket actualizado correctamente.',
     ], 200);
 }
+
+    public function show(string $id, Request $request)
+    {
+        $user = $request->user();
+        $uid  = (int) $user->id;
+
+        $canViewAll = $user->roles()
+            ->whereIn('name', ['Administrador', 'Service Support Cloud Coordinator'])
+            ->exists();
+
+        // 1) Primero: existe?
+        $ticket = Tickets::query()
+            ->with(['creator', 'assignedUser'])
+            ->whereKey($id)
+            ->first();
+
+        if (! $ticket) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ticket no encontrado.',
+            ], 404);
+        }
+
+        // 2) Luego: permiso (solo dueño o asignado, si no es admin/coordinator)
+        if (! $canViewAll) {
+            $isOwnerOrAssigned =
+                ((int) $ticket->user_create_ticket === $uid) ||
+                ((int) $ticket->assigned_user_id === $uid);
+
+            if (! $isOwnerOrAssigned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para ver este ticket.',
+                ], 403);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'ticket'  => $ticket,
+            'statusTicket' => $this->statusTicket,
+        ]);
+    }
+
 
     /**
      * Remove the specified resource from storage.
