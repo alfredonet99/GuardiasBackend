@@ -12,17 +12,23 @@ use App\Mail\GuardiaMissingMail;
 class NotifyMissingGuardia extends Command
 {
     protected $signature = 'guardias:notify-missing
-                            {--cooldown=240}
+                            {--cooldown=180}
                             {--url=http://localhost:5173/inicio}';
 
-    protected $description = 'Si NO hay guardia activa, envía email para iniciar guardia (con link).';
+    protected $description = 'Si NO hay guardia activa, envía email para iniciar guardia (solo 18:00 a 09:00, cada 3h).';
 
     public function handle(): int
     {
+        // Ventana: 18:00 -> 09:00 (cruza medianoche)
+        if (! $this->isWithinWindow()) {
+            $this->info("🕒 Fuera de ventana (18:00-09:00). No se evalúa.");
+            return Command::SUCCESS;
+        }
+
         $url = (string) $this->option('url');
         $cooldownMinutes = (int) $this->option('cooldown');
 
-        // ✅ ¿Hay guardia activa?
+        // ¿Hay guardia activa?
         $hasActive = Guardias::query()
             ->whereNull('dateFinish')
             ->where('status', 1)
@@ -33,7 +39,7 @@ class NotifyMissingGuardia extends Command
             return Command::SUCCESS;
         }
 
-        // ✅ Anti-spam: 1 aviso cada X minutos (por defecto 240 = 4h)
+        // Anti-spam: 1 aviso cada X minutos
         $cacheKey = 'guardias:missing:cooldown';
 
         if (Cache::has($cacheKey)) {
@@ -41,10 +47,13 @@ class NotifyMissingGuardia extends Command
             return Command::SUCCESS;
         }
 
-        Cache::put($cacheKey, true, now()->addMinutes($cooldownMinutes));
+        // Si cooldown=0, no bloquees
+        if ($cooldownMinutes > 0) {
+            Cache::put($cacheKey, true, now()->addMinutes($cooldownMinutes));
+        }
 
-        // ✅ Mismo destino que CloseGuardia
-        $to = 'alfredo10000z@gmail.com';
+        // Destino fijo
+        $to = 'avillavicencio@teamnet.com.mx';
 
         Mail::to($to)->send(new GuardiaMissingMail($url));
 
@@ -54,8 +63,24 @@ class NotifyMissingGuardia extends Command
             'to' => $to,
             'url' => $url,
             'cooldown' => $cooldownMinutes,
+            'now' => now()->toDateTimeString(),
         ]);
 
         return Command::SUCCESS;
+    }
+
+    private function isWithinWindow(): bool
+    {
+        // Usa timezone de Laravel (config/app.php)
+        $now = now();
+        $hour = (int) $now->format('H');
+
+        // 18:00 a 23:59  => hour >= 18
+        // 00:00 a 08:59  => hour < 9
+        // 09:00 exacto   => incluye 9:00? si quieres exacto a las 09:00, mejor validar por H:i.
+        // Para permitir envío a las 09:00 exacto con scheduler (que corre 09:00), usamos H:i:
+        $hm = $now->format('H:i');
+
+        return ($hm >= '18:00' && $hm <= '23:59') || ($hm >= '00:00' && $hm <= '09:00');
     }
 }
