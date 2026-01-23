@@ -24,4 +24,8 @@ class ClienteVeeam extends Model
         return $this->belongsTo(AppService::class,'app');
     }
 
+    public function MonitV(){
+        return $this->hasMany(Monitoreos::class,'client_id','id');
+    }
+
 }

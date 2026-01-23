@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 class TicketsController extends Controller
 {
 
-     protected array $statusTicket;
+    protected array $statusTicket;
 
     public function __construct()
     {
@@ -476,53 +476,52 @@ class TicketsController extends Controller
     }
 
     public function StatusTicket(int $id, Request $request)
-{
-    // ✅ Solo permitimos 1 (Abierto) o 3 (Anulado)
-    $data = $request->validate([
-        'status' => ['required', 'integer', Rule::in([1, 3])],
-    ]);
+    {
+        $data = $request->validate([
+            'status' => ['required', 'integer', Rule::in([1, 3])],
+        ]);
 
-    $ticket = Tickets::find($id);
+        $ticket = Tickets::find($id);
 
-    if (! $ticket) {
+        if (! $ticket) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ticket no encontrado.',
+            ], 404);
+        }
+
+        // ✅ Si está Concluido (2), no se puede cambiar
+        if ((int) $ticket->status === 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede modificar un ticket Concluido.',
+            ], 422);
+        }
+
+        $current = (int) $ticket->status;
+        $next    = (int) $data['status'];
+
+        // ✅ Solo transiciones 1 <-> 3
+        $allowed =
+            ($current === 1 && $next === 3) ||
+            ($current === 3 && $next === 1);
+
+        if (! $allowed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transición de estatus no permitida. Solo se permite Abierto ⇄ Anulado.',
+            ], 422);
+        }
+
+        $ticket->status = $next;
+        $ticket->save();
+
         return response()->json([
-            'success' => false,
-            'message' => 'Ticket no encontrado.',
-        ], 404);
+            'success' => true,
+            'message' => 'Estatus actualizado.',
+            'data'    => $ticket,
+            'status_label' => $this->statusTicket[$ticket->status] ?? $ticket->status,
+        ]);
     }
-
-    // ✅ Si está Concluido (2), no se puede cambiar
-    if ((int) $ticket->status === 2) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No se puede modificar un ticket Concluido.',
-        ], 422);
-    }
-
-    $current = (int) $ticket->status;
-    $next    = (int) $data['status'];
-
-    // ✅ Solo transiciones 1 <-> 3
-    $allowed =
-        ($current === 1 && $next === 3) ||
-        ($current === 3 && $next === 1);
-
-    if (! $allowed) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Transición de estatus no permitida. Solo se permite Abierto ⇄ Anulado.',
-        ], 422);
-    }
-
-    $ticket->status = $next;
-    $ticket->save();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Estatus actualizado.',
-        'data'    => $ticket,
-        'status_label' => $this->statusTicket[$ticket->status] ?? $ticket->status,
-    ]);
-}
 
 }

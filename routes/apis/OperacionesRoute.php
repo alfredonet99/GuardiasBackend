@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Operaciones\GuardiasController;
+use App\Http\Controllers\Operaciones\MonitoreoController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Operaciones\NetSuiteController;
 use App\Http\Controllers\Operaciones\ClienteVeeamController;
@@ -18,6 +19,7 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('/cliente-veeam/show/{id}',[ClienteVeeamController::class,'show'])->name('clientveeam.show');
         Route::delete('/cliente-veeam/{id}/delete',[ClienteVeeamController::class,'destroy']);
         Route::patch('/clientes/veeam/{id}/client-deactivate', [ClienteVeeamController::class, 'ClientDeactivate']);
+        Route::get('/obtener/lista-veeam',[ClienteVeeamController::class,'SelectVeeam']);
 
         Route::get('/app',[AppController::class,'index']);
         Route::patch('/app/{id}/app-deactivate', [AppController::class, 'toggleActivo'])->name('appclient.status');
@@ -37,5 +39,9 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::put('/tickets/{id}/update',[TicketsController::class,'update']);
         Route::get('/tickets/{id}/ver-ticket',[TicketsController::class,'show']);
         Route::patch('/tickets/{id}/status', [TicketsController::class, 'StatusTicket']);
+
+        Route::get('/monitoreos',[MonitoreoController::class,'index']);
+        Route::post('/monitoreos/store',[MonitoreoController::class,'store']);
+        Route::patch('/monitoreos/{id}/status',[MonitoreoController::class,'statusMonitoreo']);
 
     });

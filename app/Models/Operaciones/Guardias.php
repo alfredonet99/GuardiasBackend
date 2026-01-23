@@ -19,6 +19,12 @@ class Guardias extends Model
         'status',
     ];
 
+    protected $casts = [
+  'dateInit'   => 'datetime',
+  'dateFinish' => 'datetime',
+];
+
+
     public function user(){
         return $this->belongsTo(User::class, 'id_user');
     }

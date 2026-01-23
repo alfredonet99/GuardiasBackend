@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 07-01-2026 a las 06:21:22
+-- Tiempo de generación: 23-01-2026 a las 03:09:38
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -44,7 +44,7 @@ INSERT INTO `app_service` (`id`, `nameService`, `descriptionService`, `activo`, 
 (1, 'VEEAM MTY', NULL, 1, '2025-11-24 16:31:28', '2025-11-24 16:32:06'),
 (2, 'VM-BR-VEEAM', NULL, 1, '2025-11-24 16:31:55', '2025-11-24 16:31:55'),
 (3, 'VEEAM12-QRO', NULL, 1, '2025-11-24 16:32:36', '2025-12-27 01:52:28'),
-(5, 'FIREWALL', 'PRUEBA LISTA', 0, '2025-12-29 18:11:28', '2026-01-05 17:51:15');
+(5, 'FIREWALL', 'PRUEBA LISTA', 1, '2025-12-29 18:11:28', '2026-01-15 06:00:52');
 
 -- --------------------------------------------------------
 
@@ -201,7 +201,7 @@ INSERT INTO `info_guard` (`id`, `id_user`, `dateInit`, `dateFinish`, `status`, `
 (1, 27, '2025-07-31 01:08:17', NULL, 3, '2025-07-31 19:08:17', '2025-12-30 18:38:59'),
 (2, 26, '2025-08-04 00:34:09', '2025-08-04 09:38:00', 2, '2025-08-04 18:34:09', '2025-08-05 03:39:03'),
 (4, 28, '2025-08-04 18:39:38', '2025-08-05 09:05:00', 3, '2025-08-05 12:39:38', '2025-08-06 03:07:03'),
-(5, 27, '2025-08-05 15:04:04', '2025-08-06 09:01:00', 2, '2025-08-06 09:04:04', '2025-08-07 03:01:38'),
+(5, 27, '2025-08-05 15:04:04', '2026-01-22 13:35:34', 3, '2025-08-06 09:04:04', '2026-01-22 19:35:34'),
 (6, 29, '2025-08-07 18:35:10', '2025-08-08 09:26:00', 2, '2025-08-08 12:35:10', '2025-08-09 03:30:01'),
 (7, 27, '2025-08-11 18:35:21', '2025-08-12 09:00:00', 2, '2025-08-12 12:35:21', '2025-08-13 03:03:04'),
 (8, 29, '2025-08-13 18:29:20', '2025-08-14 09:19:00', 2, '2025-08-14 12:29:20', '2025-08-15 03:19:41'),
@@ -217,10 +217,12 @@ INSERT INTO `info_guard` (`id`, `id_user`, `dateInit`, `dateFinish`, `status`, `
 (18, 27, '2025-12-26 09:30:08', '2025-12-26 09:30:00', 2, '2025-12-26 15:30:08', '2025-12-26 15:30:35'),
 (19, 26, '2025-12-30 12:19:31', '2025-12-30 12:39:02', 3, '2025-12-30 18:19:31', '2025-12-30 18:39:02'),
 (20, 26, '2025-12-30 12:45:53', '2025-12-30 12:47:05', 3, '2025-12-30 18:45:53', '2025-12-30 18:47:05'),
-(21, 26, '2025-12-30 12:52:33', '2025-12-30 13:08:00', 3, '2025-12-30 18:52:33', '2025-12-30 19:08:00'),
+(21, 26, '2025-12-30 12:52:33', '2026-01-22 15:49:59', 3, '2025-12-30 18:52:33', '2026-01-22 21:49:59'),
 (22, 27, '2025-12-30 17:37:52', '2026-01-02 12:00:01', 3, '2025-12-30 23:37:52', '2026-01-02 18:00:01'),
 (23, 26, '2026-01-02 14:11:27', '2026-01-05 12:00:01', 3, '2026-01-02 20:11:27', '2026-01-05 18:00:01'),
-(24, 26, '2026-01-05 16:43:39', NULL, 1, '2026-01-05 22:43:39', '2026-01-05 22:43:39');
+(24, 26, '2026-01-05 16:43:39', '2026-01-09 16:00:01', 3, '2026-01-05 22:43:39', '2026-01-09 22:00:01'),
+(25, 27, '2026-01-13 12:23:29', '2026-01-22 14:12:24', 3, '2026-01-13 18:23:29', '2026-01-22 20:12:24'),
+(26, 27, '2026-01-20 13:41:27', '2026-01-22 15:51:25', 3, NULL, '2026-01-22 21:51:25');
 
 -- --------------------------------------------------------
 
@@ -244,7 +246,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (19, '2019_08_19_000000_create_failed_jobs_table', 1),
 (20, '2019_12_14_000001_create_personal_access_tokens_table', 1),
 (21, '2025_12_18_111630_create_areas_table', 2),
-(22, '2025_12_30_182138_create_tickets_table', 3);
+(22, '2025_12_30_182138_create_tickets_table', 3),
+(23, '2026_01_12_144145_create_monitoreos_table', 4),
+(24, '2026_01_16_161547_create_sucursales_table', 5);
 
 -- --------------------------------------------------------
 
@@ -284,6 +288,167 @@ INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 (14, 'App\\Models\\User', 24),
 (16, 'App\\Models\\User', 16),
 (16, 'App\\Models\\User', 23);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `monitoreos`
+--
+
+CREATE TABLE `monitoreos` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `siteApp` bigint(20) UNSIGNED NOT NULL,
+  `client_id` bigint(20) UNSIGNED NOT NULL,
+  `dateRest` date DEFAULT NULL,
+  `estatus` int(11) NOT NULL,
+  `observacion` text DEFAULT NULL,
+  `concluido` tinyint(3) NOT NULL,
+  `id_guard` bigint(20) UNSIGNED DEFAULT NULL,
+  `user_Cre` bigint(20) UNSIGNED NOT NULL,
+  `user_Upd` bigint(20) UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `monitoreos`
+--
+
+INSERT INTO `monitoreos` (`id`, `siteApp`, `client_id`, `dateRest`, `estatus`, `observacion`, `concluido`, `id_guard`, `user_Cre`, `user_Upd`, `created_at`, `updated_at`) VALUES
+(1, 1, 34, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(2, 3, 62, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(3, 1, 14, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(4, 1, 1, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(5, 1, 26, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(6, 1, 27, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(7, 1, 41, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(8, 1, 19, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(9, 3, 66, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(10, 3, 54, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(11, 1, 16, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(12, 2, 37, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(13, 1, 42, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(14, 1, 13, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(15, 1, 17, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(16, 2, 11, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(17, 1, 22, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(18, 1, 12, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(19, 1, 44, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(20, 1, 43, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(21, 1, 5, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(22, 3, 65, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(23, 1, 45, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(24, 1, 46, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(25, 1, 21, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(26, 3, 67, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(27, 1, 7, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(28, 1, 47, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(29, 3, 64, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(30, 1, 9, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(31, 1, 15, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(32, 1, 23, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(33, 2, 35, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(34, 1, 2, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(35, 3, 56, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(36, 1, 48, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(37, 1, 3, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(38, 1, 20, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(39, 3, 68, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(40, 2, 36, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(41, 2, 25, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(42, 3, 60, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(43, 1, 53, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(44, 3, 55, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(45, 1, 31, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(46, 1, 4, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(47, 2, 39, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(48, 1, 38, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(49, 3, 58, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(50, 1, 18, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(51, 1, 49, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(52, 3, 57, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(53, 1, 50, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(54, 1, 51, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(55, 1, 33, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(56, 3, 59, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(57, 3, 63, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(58, 1, 10, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(59, 1, 6, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(60, 1, 52, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(61, 1, 28, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(62, 1, 29, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(63, 1, 32, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(64, 1, 30, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(65, 1, 24, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(66, 1, 8, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(67, 3, 61, NULL, 4, 'gffdsfdsfsdf', 1, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:21:19'),
+(68, 1, 40, '2026-01-12', 6, 'fdfdsffsdf', 1, NULL, 12, 12, '2026-01-16 00:21:19', '2026-01-16 00:45:05'),
+(69, 1, 34, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(70, 3, 62, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(71, 1, 1, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(72, 1, 26, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(73, 1, 27, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(74, 1, 41, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(75, 1, 19, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(76, 3, 66, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(77, 3, 54, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(78, 1, 16, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(79, 2, 37, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(80, 1, 42, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(81, 1, 13, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(82, 1, 17, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(83, 2, 11, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(84, 1, 22, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(85, 1, 12, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(86, 1, 44, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(87, 1, 43, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(88, 1, 5, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(89, 3, 65, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(90, 1, 45, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(91, 1, 46, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(92, 1, 21, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(93, 3, 67, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(94, 1, 7, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(95, 1, 47, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(96, 3, 64, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(97, 1, 9, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(98, 1, 15, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(99, 1, 23, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(100, 2, 35, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(101, 1, 2, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(102, 3, 56, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(103, 1, 48, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(104, 1, 3, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(105, 1, 20, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(106, 3, 68, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(107, 2, 36, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(108, 2, 25, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(109, 3, 60, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(110, 1, 53, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(111, 3, 55, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(112, 1, 31, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(113, 1, 4, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(114, 2, 39, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(115, 1, 38, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(116, 3, 58, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(117, 1, 18, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(118, 1, 49, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(119, 3, 57, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(120, 1, 50, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(121, 1, 51, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(122, 1, 33, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(123, 3, 59, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(124, 3, 63, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(125, 1, 10, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(126, 1, 6, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(127, 1, 52, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(128, 1, 28, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(129, 1, 29, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(130, 1, 32, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(131, 1, 30, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(132, 1, 24, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(133, 1, 8, NULL, 1, NULL, 2, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03'),
+(134, 1, 14, '2026-01-20', 3, 'SE ENCONTRARON PROBLEMAS', 1, NULL, 12, 12, '2026-01-22 18:37:03', '2026-01-22 18:37:03');
 
 -- --------------------------------------------------------
 
@@ -360,7 +525,22 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `id_area`, `description`,
 (60, 'tickets.create', 'api', 1, 'Método que permite visualizar la sección para crear un tickets.', '2025-12-31 00:00:50', '2025-12-31 00:00:50'),
 (61, 'tickets.edit', 'api', 1, 'Método que permite visualizar la sección para editar un tickets.', '2025-12-31 00:00:50', '2025-12-31 00:00:50'),
 (62, 'tickets.delete', 'api', 1, 'Método que permite eliminar un tickets.', '2025-12-31 00:00:50', '2025-12-31 00:00:50'),
-(63, 'tickets.show', 'api', 1, 'Método que permite visualizar los detalles de un tickets.', '2025-12-31 00:00:50', '2025-12-31 00:00:50');
+(63, 'tickets.show', 'api', 1, 'Método que permite visualizar los detalles de un tickets.', '2025-12-31 00:00:50', '2025-12-31 00:00:50'),
+(64, 'monitoreos.browse', 'api', 1, 'Método que permite navegar en la sección monitoreos.', '2026-01-12 15:45:58', '2026-01-12 15:45:58'),
+(65, 'monitoreos.create', 'api', 1, 'Método que permite visualizar la sección para crear un monitoreos.', '2026-01-12 15:45:58', '2026-01-12 15:45:58'),
+(66, 'monitoreos.edit', 'api', 1, 'Método que permite visualizar la sección para editar un monitoreos.', '2026-01-12 15:45:58', '2026-01-12 15:45:58'),
+(67, 'monitoreos.delete', 'api', 1, 'Método que permite eliminar un monitoreos.', '2026-01-12 15:45:58', '2026-01-12 15:45:58'),
+(68, 'monitoreos.show', 'api', 1, 'Método que permite visualizar los detalles de un monitoreos.', '2026-01-12 15:45:58', '2026-01-12 15:45:58'),
+(69, 'sucursales.browse', 'api', 4, 'Método que permite navegar en la sección sucursales.', '2026-01-16 21:44:09', '2026-01-16 21:44:09'),
+(70, 'sucursales.create', 'api', 4, 'Método que permite visualizar la sección para crear un sucursales.', '2026-01-16 21:44:09', '2026-01-16 21:44:09'),
+(71, 'sucursales.edit', 'api', 4, 'Método que permite visualizar la sección para editar un sucursales.', '2026-01-16 21:44:09', '2026-01-16 21:44:09'),
+(72, 'sucursales.delete', 'api', 4, 'Método que permite eliminar un sucursales.', '2026-01-16 21:44:09', '2026-01-16 21:44:09'),
+(73, 'sucursales.show', 'api', 4, 'Método que permite visualizar los detalles de un sucursales.', '2026-01-16 21:44:09', '2026-01-16 21:44:09'),
+(74, 'microsoft.browse', 'api', 4, 'Método que permite navegar en la sección microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22'),
+(75, 'microsoft.create', 'api', 4, 'Método que permite visualizar la sección para crear un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22'),
+(76, 'microsoft.edit', 'api', 4, 'Método que permite visualizar la sección para editar un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22'),
+(77, 'microsoft.delete', 'api', 4, 'Método que permite eliminar un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22'),
+(78, 'microsoft.show', 'api', 4, 'Método que permite visualizar los detalles de un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22');
 
 -- --------------------------------------------------------
 
@@ -516,7 +696,81 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (62, 4),
 (63, 4),
 (63, 9),
-(63, 11);
+(63, 11),
+(64, 4),
+(64, 9),
+(64, 11),
+(65, 4),
+(65, 9),
+(65, 11),
+(66, 4),
+(66, 11),
+(67, 4),
+(68, 4),
+(68, 9),
+(68, 11),
+(69, 4),
+(70, 4),
+(71, 4),
+(72, 4),
+(73, 4),
+(74, 4),
+(75, 4),
+(76, 4),
+(77, 4),
+(78, 4);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `sucursales`
+--
+
+CREATE TABLE `sucursales` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `nameS` int(11) DEFAULT NULL,
+  `servHost` varchar(255) NOT NULL,
+  `plat` int(11) NOT NULL,
+  `keys` varchar(255) DEFAULT NULL,
+  `ip` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `sucursales`
+--
+
+INSERT INTO `sucursales` (`id`, `nameS`, `servHost`, `plat`, `keys`, `ip`, `created_at`, `updated_at`) VALUES
+(1, 1, 'AP-Guadalajara-01', 1, NULL, '192.168.10.64', '2026-01-20 21:27:31', '2026-01-20 21:27:31'),
+(2, 1, 'Ventas02', 1, NULL, '192.168.160.35', '2026-01-20 22:54:44', '2026-01-20 22:54:44'),
+(3, 2, 'AP-Guadalajara-04', 1, NULL, '192.168.10.54', '2026-01-20 23:14:03', '2026-01-20 23:14:03'),
+(4, 1, 'Cecap01', 1, NULL, '192.168.160.47', '2026-01-20 23:14:18', '2026-01-20 23:14:18'),
+(5, 1, 'Direccion', 1, NULL, '192.168.160.37', '2026-01-20 23:14:57', '2026-01-20 23:14:57'),
+(6, 1, 'Nave01', 1, NULL, '192.168.160.33', '2026-01-20 23:15:25', '2026-01-20 23:15:25'),
+(7, 1, 'Finanzas01', 1, NULL, '192.168.160.39', '2026-01-20 23:15:46', '2026-01-20 23:15:46'),
+(8, 3, 'AP-Monterrey-04', 1, NULL, '192.168.30.19', '2026-01-20 23:16:01', '2026-01-20 23:16:01'),
+(9, 1, 'Sistemas', 1, NULL, '192.168.160.45', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(10, 1, 'Kodak', 1, NULL, '192.168.160.42', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(11, 3, 'AP-Monterrey-01', 1, NULL, '192.168.30.21', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(12, 2, 'AP-Guadalajara-02', 1, NULL, '192.168.10.62', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(13, 4, 'AP-Merida', 1, NULL, '192.168.20.130', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(14, 3, 'AP-Monterrey-00', 1, NULL, '192.168.30.20', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(15, 2, 'AP-Guadalajara-03', 1, NULL, '192.168.10.55', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(16, 1, 'Marel', 1, NULL, '192.168.160.43', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(17, 1, 'Ventas01', 1, NULL, '192.168.161.123', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(18, 1, 'Operaciones', 1, NULL, '192.168.160.40', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(19, 1, 'Cecap02', 1, NULL, '192.168.160.46', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(20, 1, 'Iker', 1, NULL, '192.168.160.41', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(21, 3, 'AP-Monterrey-03', 1, NULL, '192.168.30.23', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(22, 1, 'Sala Scalling Up', 1, NULL, '192.168.160.38', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(23, 1, 'Finanzas02', 1, NULL, '192.168.160.34', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(24, 1, 'Finanzas03', 1, NULL, '192.168.160.36', '2026-01-21 01:12:42', '2026-01-21 01:12:42'),
+(25, 1, 'Primario Valle', 2, '1igxv4b', NULL, '2026-01-21 04:19:31', '2026-01-21 04:19:31'),
+(26, 2, 'Primario Guadalajara', 2, '1k0rd2p', NULL, '2026-01-21 04:19:31', '2026-01-21 04:19:31'),
+(27, 3, 'Primario Monterrey', 2, '1-1tg5w8x', NULL, '2026-01-21 04:19:31', '2026-01-21 04:19:31'),
+(28, 1, 'Secundario Valle', 2, '1-1tg3jbf', NULL, '2026-01-21 04:19:31', '2026-01-21 04:19:31'),
+(29, 4, 'Merida', 2, '1-1igyhsm', NULL, '2026-01-21 04:19:31', '2026-01-21 05:35:25');
 
 -- --------------------------------------------------------
 
@@ -543,21 +797,8 @@ CREATE TABLE `tickets` (
 --
 
 INSERT INTO `tickets` (`id`, `numTicket`, `numTicketNoct`, `user_create_ticket`, `assigned_user_id`, `titleTicket`, `descriptionTicket`, `status`, `id_guardia`, `created_at`, `updated_at`) VALUES
-(1, 1, NULL, 26, 27, 'Prueba de ticket', 'Ticket creado desde tinker para validar flujo.', 1, NULL, '2025-12-31 00:49:43', '2025-12-31 00:49:43'),
-(2, 1001, NULL, 27, 27, 'Prueba Postman', 'Creando ticket y detectando guardia activa si existe.', 2, 22, '2025-12-31 01:52:44', '2025-12-31 01:52:44'),
-(3, 12345, NULL, 19, 27, 'PRUEBA BUENA', 'TODO VA A SALIR BIENB', 1, NULL, '2026-01-02 21:35:32', '2026-01-02 21:35:32'),
-(4, 789, 123, 19, 28, 'PRUEBA BUENA 2', 'HOLA, BIEN', 1, NULL, '2026-01-02 21:44:08', '2026-01-02 21:44:08'),
-(5, 5214, 632, 19, 28, 'HFR4FA', 'FFDSFFSD', 1, NULL, '2026-01-02 21:44:08', '2026-01-06 03:12:13'),
-(6, 4365, NULL, 26, 19, 'PRUEBA LALO', 'PRUEBAS HECHAS POR LALO', 1, 23, '2026-01-02 21:59:44', '2026-01-02 21:59:44'),
-(7, 98765, 456789, 26, 27, 'PRUEBA UNA VEZ MAS', 'PRUEBA UNA VEZ MAS', 1, 23, '2026-01-02 22:45:31', '2026-01-02 22:45:31'),
-(8, 7892, 4562, 26, 28, 'PRUEBA UNA VEZ MAS  2.0', 'PRUEBA UNA VEZ MAS  2.0', 1, 23, '2026-01-02 22:45:32', '2026-01-02 22:45:32'),
-(9, 78964, 45666, 26, 27, 'PRUEBA UNA VEZ MAS  3.0', '452254', 1, 23, '2026-01-02 22:45:32', '2026-01-02 22:45:32'),
-(10, 76555, NULL, 26, 19, 'NO DEPENDE DEL FROTN LALO', 'NO DEPENDE DEL FROTN LALO', 1, 23, '2026-01-02 23:10:07', '2026-01-02 23:10:07'),
-(11, 7985542, 5561455, 26, 28, 'NO DEPENDE DEL FROTN LALO 2', 'NO DEPENDE DEL FROTN LALO', 1, 23, '2026-01-02 23:10:07', '2026-01-02 23:10:07'),
-(12, 5252, 5252, 28, 27, 'operaciones/tickets', 'operaciones/tickets', 1, NULL, '2026-01-02 23:12:51', '2026-01-02 23:12:51'),
-(13, 342334, 3432423, 26, 19, '423423423434234', 'dsaddadsdasdsa', 1, 23, '2026-01-02 23:18:50', '2026-01-02 23:18:50'),
-(14, 714835, NULL, 27, 26, 'ESTO SE EJEUCTA TAMBIEN OK', 'SE EJECUTA CORRECTAMENTE', 1, NULL, '2026-01-02 23:20:24', '2026-01-06 01:30:22'),
-(15, 739182, 963, 27, 26, 'update correcto', 'update correcto', 1, NULL, '2026-01-06 01:30:15', '2026-01-06 05:04:58');
+(16, 794620, 30254, 19, 26, 'YO DILAN X2', 'yodilan x23', 1, NULL, '2026-01-15 17:44:10', '2026-01-15 17:44:10'),
+(17, 432432, 234324, 29, 19, 'PRUEBA BUENA', 'fsdfdffsfdfs', 2, NULL, '2026-01-15 17:44:21', '2026-01-15 20:00:51');
 
 -- --------------------------------------------------------
 
@@ -585,13 +826,13 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `area_id`, `email_verified_at`, `password`, `avatar`, `Activo`, `remember_token`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(12, 'Alfredo Villavicencio Luis', 'avillavicencio@teamnet.com.mx', NULL, NULL, '$2y$12$9oX8oCaZ0gpLtcoieL2FAOZ0kMBXhSAgVoCEEXhBP3AsLunvoOuSa', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/12-1767072008324.webp', 1, NULL, '2026-01-06 05:01:29', '2025-12-05 06:43:48', '2026-01-06 05:01:29'),
-(16, 'Bernardo Jast', 'rolando.durgan@example.net', 4, '2025-12-05 22:10:14', '$2y$12$GeIP67KWH9oIQiAGgEk6zeLaNRA4YpIATdUHWj3FImhcsmMheJ4Rm', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, 'brfsLoHBaW', '2025-12-30 23:33:54', '2025-12-05 22:10:14', '2025-12-30 23:33:54'),
+(12, 'Alfredo Villavicencio Luis', 'avillavicencio@teamnet.com.mx', NULL, NULL, '$2y$12$9oX8oCaZ0gpLtcoieL2FAOZ0kMBXhSAgVoCEEXhBP3AsLunvoOuSa', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/12-1767072008324.webp', 1, NULL, '2026-01-22 19:11:32', '2025-12-05 06:43:48', '2026-01-22 19:11:32'),
+(16, 'Bernardo Jast', 'rolando.durgan@example.net', 4, '2025-12-05 22:10:14', '$2y$12$GeIP67KWH9oIQiAGgEk6zeLaNRA4YpIATdUHWj3FImhcsmMheJ4Rm', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, 'brfsLoHBaW', '2026-01-16 19:27:39', '2025-12-05 22:10:14', '2026-01-16 19:27:39'),
 (19, 'Alfredo Villavicencio No Admin', 'alfre1230999@gmail.com', 1, NULL, '$2y$12$O86jv0RpspWBBq/iq.YZMu2Anrb6WZhHBugXCAGHUPkb23z84ZEeq', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/19-1766204795492.webp', 1, NULL, '2025-12-26 20:30:22', '2025-12-13 04:03:40', '2026-01-02 18:53:34'),
 (23, 'Pruebas Lopez', 'prueba@pruebaLo.com', 4, NULL, '$2y$12$12w69BfzkFjS7C8Y0cLoeOTXK29zCSM/FfSjLufk8kd/K6gufIbeW', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:40:42', '2025-12-19 18:40:42'),
 (24, 'Pruebas Gomez', 'prueba@pruebaGo.com', 2, NULL, '$2y$12$HlUDy7GneveFbZM3Qk7HSew.t/ITgr8O0boM9u36bgb1fJL8AjAfK', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:41:37', '2025-12-19 19:10:40'),
-(26, 'Eduardo Flores Santiago', 'eduardo.flores@stratospherecorp.com', 1, NULL, '$2y$12$ZB.9fVCi7NCKkTIEjvFYaOT.YqPiS91Gyb8Iz6D9TAjxzL1J2uoz2', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, '2026-01-06 02:27:51', '2025-12-29 16:48:36', '2026-01-06 02:27:51'),
-(27, 'Dilan Martínez Escobedo', 'dilan.martinez@stratospherecorp.com', 1, NULL, '$2y$12$4/S1xrBd4SSalCv7u9jtCO1mU0x5oC54jE6ljQwNdvX33SwPy05jO', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, '2026-01-06 03:34:44', '2025-12-29 16:52:24', '2026-01-06 03:34:44'),
+(26, 'Eduardo Flores Santiago', 'eduardo.flores@stratospherecorp.com', 1, NULL, '$2y$12$ZB.9fVCi7NCKkTIEjvFYaOT.YqPiS91Gyb8Iz6D9TAjxzL1J2uoz2', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/26-1769107169999.webp', 1, NULL, '2026-01-22 18:38:39', '2025-12-29 16:48:36', '2026-01-22 18:39:30'),
+(27, 'Dilan Martínez Escobedo', 'dilan.martinez@stratospherecorp.com', 1, NULL, '$2y$12$4/S1xrBd4SSalCv7u9jtCO1mU0x5oC54jE6ljQwNdvX33SwPy05jO', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, '2026-01-22 19:42:03', '2025-12-29 16:52:24', '2026-01-22 19:42:03'),
 (28, 'Miguel Rojas Romero', 'miguel.rojas@stratospherecorp.com', 1, NULL, '$2y$12$RRDgVk4HQEFOXL1/omNz8OppgK8Dr1OthScClCz9lwQgtgazPFm/e', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, '2025-12-30 18:25:24', '2025-12-30 04:09:51', '2025-12-30 18:25:24'),
 (29, 'Miguel Segundo Sebastián', 'miguel.segundo@stratospherecorp.com', 1, NULL, '$2y$12$3D7lhuU9YiYDHaI4NLS68.T84o2fm3XHXNJ604pGPFHkdBH9wmW6C', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-30 04:10:38', '2025-12-30 04:10:38');
 
@@ -603,7 +844,8 @@ INSERT INTO `users` (`id`, `name`, `email`, `area_id`, `email_verified_at`, `pas
 -- Indices de la tabla `app_service`
 --
 ALTER TABLE `app_service`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_app_service_name` (`nameService`);
 
 --
 -- Indices de la tabla `areas`
@@ -616,7 +858,10 @@ ALTER TABLE `areas`
 -- Indices de la tabla `c_veeam`
 --
 ALTER TABLE `c_veeam`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cveeam_activo_name` (`activo`,`nameCV`),
+  ADD KEY `idx_cveeam_app` (`app`),
+  ADD KEY `idx_cveeam_num` (`numCV`);
 
 --
 -- Indices de la tabla `failed_jobs`
@@ -629,7 +874,8 @@ ALTER TABLE `failed_jobs`
 -- Indices de la tabla `info_guard`
 --
 ALTER TABLE `info_guard`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_info_guard_user_status_date` (`id_user`,`status`,`dateInit`);
 
 --
 -- Indices de la tabla `migrations`
@@ -650,6 +896,19 @@ ALTER TABLE `model_has_permissions`
 ALTER TABLE `model_has_roles`
   ADD PRIMARY KEY (`role_id`,`model_id`,`model_type`),
   ADD KEY `model_has_roles_model_id_model_type_index` (`model_id`,`model_type`);
+
+--
+-- Indices de la tabla `monitoreos`
+--
+ALTER TABLE `monitoreos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_concluido_created` (`concluido`,`created_at`),
+  ADD KEY `idx_siteApp` (`siteApp`),
+  ADD KEY `idx_client_id` (`client_id`),
+  ADD KEY `idx_user_cre` (`user_Cre`),
+  ADD KEY `idx_user_upd` (`user_Upd`),
+  ADD KEY `idx_created_at` (`created_at`),
+  ADD KEY `idx_client_site_dateRest` (`client_id`,`siteApp`,`dateRest`);
 
 --
 -- Indices de la tabla `password_reset_tokens`
@@ -686,6 +945,12 @@ ALTER TABLE `role_has_permissions`
   ADD PRIMARY KEY (`permission_id`,`role_id`);
 
 --
+-- Indices de la tabla `sucursales`
+--
+ALTER TABLE `sucursales`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `tickets`
 --
 ALTER TABLE `tickets`
@@ -705,7 +970,9 @@ ALTER TABLE `tickets`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `users_email_unique` (`email`);
+  ADD UNIQUE KEY `users_email_unique` (`email`),
+  ADD KEY `idx_users_name` (`name`),
+  ADD KEY `idx_users_email` (`email`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -739,19 +1006,25 @@ ALTER TABLE `failed_jobs`
 -- AUTO_INCREMENT de la tabla `info_guard`
 --
 ALTER TABLE `info_guard`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT de la tabla `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+
+--
+-- AUTO_INCREMENT de la tabla `monitoreos`
+--
+ALTER TABLE `monitoreos`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=135;
 
 --
 -- AUTO_INCREMENT de la tabla `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
 
 --
 -- AUTO_INCREMENT de la tabla `personal_access_tokens`
@@ -766,10 +1039,16 @@ ALTER TABLE `roles`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
+-- AUTO_INCREMENT de la tabla `sucursales`
+--
+ALTER TABLE `sucursales`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+
+--
 -- AUTO_INCREMENT de la tabla `tickets`
 --
 ALTER TABLE `tickets`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT de la tabla `users`

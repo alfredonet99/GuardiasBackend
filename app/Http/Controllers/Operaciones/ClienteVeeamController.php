@@ -7,9 +7,20 @@ use App\Models\Operaciones\ClienteVeeam;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Throwable;
+use Illuminate\Support\Facades\DB;
+use App\Models\Operaciones\Monitoreos;
 
 class ClienteVeeamController extends Controller
 {
+
+    private array $statusVe = [];
+    public function __construct() {
+        $this->statusVe = [
+            '1' => 'Completado Exitoso - Backup finalizado sin errores', '2' => 'Completado con Advertencias - Backup terminado pero con observaciones menores', 
+            '3' => 'Fallido - Backup no se completó correctamente', '4' => ' En Progreso - Backup actualmente en ejecución',
+            '5' => ' Pausado - Backup detenido temporalmente', '6' => ' Pendiente - Programado pero no iniciado',
+        ];
+    }
    
     public function index(Request $request)
     {
@@ -286,4 +297,76 @@ class ClienteVeeamController extends Controller
             'data'    => $cliente,
         ]);
     }
+
+  public function SelectVeeam()
+{
+    $siteAppId = (int) DB::table('app_service')
+        ->where('nameService', 'like', '%Veeam%')
+        ->orderBy('id')
+        ->value('id');
+
+    if (!$siteAppId) {
+        return response()->json([
+            'message' => 'No existe app_service configurado para Veeam.',
+            'code'    => 'VEEAM_APP_SERVICE_NOT_FOUND',
+        ], 422);
+    }
+
+    $last = DB::table('monitoreos')
+        ->selectRaw('client_id, siteApp, MAX(dateRest) as last_dateRest')
+        ->whereNotNull('dateRest')
+        ->groupBy('client_id', 'siteApp');
+
+    $active = DB::table('monitoreos')
+        ->selectRaw('client_id, siteApp, 1 as has_active')
+        ->where('concluido', 1)
+        ->groupBy('client_id', 'siteApp');
+
+    $items = ClienteVeeam::query()
+        ->where('c_veeam.activo', 1)
+
+        // last_dateRest
+        ->leftJoinSub($last, 'lr', function ($join) {
+            $join->on('c_veeam.id', '=', 'lr.client_id')
+                 ->on('c_veeam.app', '=', 'lr.siteApp');
+        })
+
+        // ✅ join activos
+        ->leftJoinSub($active, 'ac', function ($join) {
+            $join->on('c_veeam.id', '=', 'ac.client_id')
+                 ->on('c_veeam.app', '=', 'ac.siteApp');
+        })
+
+        // ✅ excluir los que tienen activo
+        ->whereNull('ac.has_active')
+
+        ->orderBy('c_veeam.nameCV')
+        ->get([
+            'c_veeam.id',
+            'c_veeam.numCV',
+            'c_veeam.nameCV',
+            'c_veeam.backup',
+            'c_veeam.jobs',
+            DB::raw('lr.last_dateRest as last_dateRest'),
+        ])
+        ->map(fn ($c) => [
+            'id' => $c->id,
+            'numCV' => $c->numCV,
+            'nameCV' => $c->nameCV,
+            'backup' => $c->backup,
+            'jobs' => $c->jobs,
+            'last_dateRest' => $c->last_dateRest,
+            'label' => trim($c->numCV.' - '.$c->nameCV),
+        ])
+        ->values();
+
+    return response()->json([
+        'items'     => $items,
+        'status'    => $this->statusVe,
+        'source'    => 'veeam',
+        'siteAppId' => $siteAppId,
+    ], 200);
+}
+
+
 }

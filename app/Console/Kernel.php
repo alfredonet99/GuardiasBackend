@@ -17,6 +17,10 @@ class Kernel extends ConsoleKernel
         ->everyTwoHours()
         ->withoutOverlapping()
         ->runInBackground();
+
+         $schedule->command('guardias:notify-missing --url=http://localhost:5173/inicio --cooldown=240')
+        ->everyTwoHours()
+        ->withoutOverlapping();
     }
 
     protected function commands(): void

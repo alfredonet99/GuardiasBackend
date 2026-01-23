@@ -14,8 +14,8 @@
 
   <ul>
     <li><strong>ID Guardia:</strong> {{ $guardia->id }}</li>
-    <li><strong>Inicio:</strong> {{ optional($guardia->dateInit)->format('d/m/Y H:i') }}</li>
-    <li><strong>Cierre:</strong> {{ optional($guardia->dateFinish)->format('d/m/Y H:i') }}</li>
+    <li><strong>Inicio:</strong> {{ $guardia->dateInit?->format('d/m/Y H:i') ?? '—' }}</li>
+    <li><strong>Cierre:</strong> {{ $guardia->dateFinish?->format('d/m/Y H:i') ?? '—' }}</li>
     <li><strong>Estatus:</strong> Cerrado por sistema (3)</li>
   </ul>
 

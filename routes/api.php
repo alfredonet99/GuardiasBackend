@@ -78,6 +78,8 @@ Route::middleware(['auth:api','active.user', AuthMiddleware::class, 'module.perm
     Route::delete('/areas/{id}/delete', [AreaController::class, 'destroy'])->name('area.destroy');
 
     require __DIR__ . '/apis/OperacionesRoute.php';
+    require __DIR__ . '/apis/ComunicacionesRoute.php';
+
 
     
 });
