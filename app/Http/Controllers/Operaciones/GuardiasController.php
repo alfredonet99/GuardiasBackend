@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Operaciones;
 
 use App\Http\Controllers\Controller;
+use App\Models\Operaciones\Tickets;
 use Illuminate\Http\Request;
 use App\Models\Operaciones\Guardias;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class GuardiasController extends Controller
 {
 
-     protected array $statusMap;
+    protected array $statusMap;
 
     public function __construct()
     {
@@ -229,10 +232,184 @@ class GuardiasController extends Controller
         ]);
     }
 
+   public function closeData(Request $request)
+{
+    $user = $request->user();
+    if (! $user) abort(401, 'No autenticado.');
+
+    $guardia = Guardias::where('id_user', $user->id)
+        ->where('status', 1)
+        ->whereNull('dateFinish')
+        ->latest('dateInit')
+        ->first();
+
+    // ✅ SOLO tickets asignados al usuario Y abiertos (no concluidos)
+    $tickets = Tickets::query()
+        ->select([
+            'id',
+            'numTicket',
+            'numTicketNoct',
+            'user_create_ticket',
+            'assigned_user_id',
+            'titleTicket',
+            'descriptionTicket',
+            'status',
+            'id_guardia',
+            'created_at',
+            'updated_at',
+        ])
+        ->with([
+            'creator:id,name,email',
+            'assignedUser:id,name,email',
+            'guardia:id,id_user,dateInit,dateFinish,status',
+        ])
+        ->where('assigned_user_id', $user->id)
+        ->where('status', '!=', 2) // ✅ abiertos
+        ->orderByDesc('created_at')
+        ->get();
+
+    return response()->json([
+        'hasActive' => (bool) $guardia,
+        'guardia'   => $guardia?->load('user:id,name,email'),
+        'tickets'   => $tickets,
+        'statusMap' => $this->statusMap,
+    ]);
+}
+
+
+public function updateCloseTicket(Request $request)
+    {
+        $authUser = $request->user();
+        if (! $authUser) abort(401, 'No autenticado.');
+
+        $authUserId = (int) $authUser->id;
+
+        $isAdmin = method_exists($authUser, 'isAdmin')
+            ? (bool) $authUser->isAdmin()
+            : $authUser->roles()->where('name', 'Administrador')->exists();
+
+        $data = $request->validate([
+            'tickets' => ['required', 'array', 'min:1'],
+
+            'tickets.*.id' => ['required', 'integer', Rule::exists('tickets', 'id')],
+            'tickets.*.numTicket' => ['required', 'integer'],
+            'tickets.*.numTicketNoct' => ['nullable', 'integer'],
+            'tickets.*.titleTicket' => ['required', 'string', 'max:100'],
+            'tickets.*.descriptionTicket' => ['required', 'string', 'max:2000'],
+            'tickets.*.status' => ['required', 'integer', Rule::in([1, 2])],
+            'tickets.*.assigned_user_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
+            ],
+        ]);
+
+        $activeGuardiaId = Guardias::query()
+            ->where('id_user', $authUserId)
+            ->where('status', 1)
+            ->whereNull('dateFinish')
+            ->orderByDesc('dateInit')
+            ->value('id');
+
+        if (! $activeGuardiaId) {
+            abort(422, 'No hay guardia activa para cerrar.');
+        }
+
+        return DB::transaction(function () use ($data, $authUserId, $isAdmin, $activeGuardiaId) {
+
+            $guardia = Guardias::query()
+                ->where('id', $activeGuardiaId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $ids = collect($data['tickets'])->pluck('id')->map(fn ($v) => (int) $v)->all();
+
+            $ticketsDb = Tickets::query()
+                ->whereIn('id', $ids)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $updatedIds = [];
+
+            foreach ($data['tickets'] as $row) {
+                $id = (int) $row['id'];
+
+                /** @var Tickets $ticket */
+                $ticket = $ticketsDb->get($id);
+                if (! $ticket) abort(404, "Ticket no encontrado: {$id}");
+
+                if (! $isAdmin && (int) $ticket->assigned_user_id !== $authUserId) {
+                    abort(403, "No puedes editar el ticket {$id} (no está asignado a ti).");
+                }
+
+                $nextStatus = (int) $row['status'];
+
+                $nextAssignedUserId = (int) ($ticket->assigned_user_id ?? 0);
+
+                if ($isAdmin) {
+                    if (! empty($row['assigned_user_id'])) {
+                        $nextAssignedUserId = (int) $row['assigned_user_id'];
+                    }
+                } else {
+                    if ($nextStatus === 2) {
+                        $nextAssignedUserId = $authUserId;
+                    } else {
+                        $candidate = ! empty($row['assigned_user_id'])
+                            ? (int) $row['assigned_user_id']
+                            : (int) ($ticket->assigned_user_id ?? 0);
+
+                        if ($candidate === $authUserId) {
+                            abort(422, "Ticket {$id}: cuando está activo, no puedes reasignarte a ti mismo.");
+                        }
+
+                        $nextAssignedUserId = $candidate;
+                    }
+                }
+
+                $ticket->numTicket = (int) $row['numTicket'];
+                $ticket->numTicketNoct = $row['numTicketNoct'] !== null ? (int) $row['numTicketNoct'] : null;
+                $ticket->titleTicket = $row['titleTicket'];
+                $ticket->descriptionTicket = $row['descriptionTicket'];
+                $ticket->status = $nextStatus;
+                $ticket->assigned_user_id = $nextAssignedUserId;
+
+                $ticket->id_guardia = (int) $activeGuardiaId;
+
+                $ticket->save();
+                $updatedIds[] = $ticket->id;
+            }
+
+            // ✅ Cerrar guardia con status=2 (Finalizado por usuario)
+            if ($guardia->dateFinish === null) {
+                $guardia->dateFinish = now();
+                $guardia->status = 2;
+                $guardia->save();
+            }
+
+            $ticketsToSend = Tickets::query()
+                ->where('id_guardia', $activeGuardiaId)
+                ->with(['creator:id,name,email', 'assignedUser:id,name,email'])
+                ->orderBy('id')
+                ->get();
+
+            return response()->json([
+                'message' => 'Tickets actualizados y guardia cerrada correctamente.',
+                'guardia_id' => (int) $activeGuardiaId,
+                'updated_ticket_ids' => $updatedIds,
+                'tickets' => $ticketsToSend,
+            ]);
+        });
+    }
+
+
+
     public function show(string $id)
     {
         
     }
+
+
 
     /**
      * Show the form for editing the specified resource.

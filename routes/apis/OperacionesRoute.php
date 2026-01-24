@@ -32,6 +32,9 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('/guardias',[GuardiasController::class,'index']);
         Route::post("/guardias/store",[GuardiasController::class, 'store']);
         Route::get('/guardias/active', [GuardiasController::class, 'active']);
+        Route::get('/guardias/close', [GuardiasController::class, 'closeData']);
+        Route::patch('/guardias/close/tickets', [GuardiasController::class, 'updateCloseTicket']);
+
 
         Route::get('/tickets',[TicketsController::class,'index']);
         Route::post('/tickets/crear',[TicketsController::class,'store']);

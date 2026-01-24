@@ -28,4 +28,10 @@ class Guardias extends Model
     public function user(){
         return $this->belongsTo(User::class, 'id_user');
     }
+
+    public function ticketsguard()
+    {
+        return $this->hasMany(Tickets::class, 'id_guardia', 'id');
+    }
+
 }
