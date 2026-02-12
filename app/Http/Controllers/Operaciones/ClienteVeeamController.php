@@ -9,6 +9,7 @@ use Illuminate\Validation\Rule;
 use Throwable;
 use Illuminate\Support\Facades\DB;
 use App\Models\Operaciones\Monitoreos;
+use Illuminate\Support\Facades\Log;
 
 class ClienteVeeamController extends Controller
 {
@@ -230,20 +231,32 @@ class ClienteVeeamController extends Controller
     }
 
     public function show($id)
-    {
-        $clienteVeeam = ClienteVeeam::with('AppCV')->find($id);
+{
+    $clienteVeeam = ClienteVeeam::with([
+  'AppCV',
+  'MonitV' => function ($q) {
+    $q->select('client_id', 'dateRest')
+      ->whereNotNull('dateRest')
+      ->groupBy('client_id', 'dateRest')
+      ->orderByDesc('dateRest');
+  },
+])->find($id);
 
-        if (!$clienteVeeam) {
-            return response()->json([
-                'message' => 'Cliente no encontrado.',
-                'code' => 'NOT_FOUND',
-            ], 404);
-        }
-
+    if (!$clienteVeeam) {
         return response()->json([
-            'data' => $clienteVeeam,
-        ], 200);
+            'message' => 'Cliente no encontrado.',
+            'code' => 'NOT_FOUND',
+        ], 404);
     }
+
+    Log::info($clienteVeeam);
+
+    return response()->json([
+        'data' => $clienteVeeam,
+    ], 200);
+}
+
+
 
    public function destroy($id)
     {
@@ -300,6 +313,7 @@ class ClienteVeeamController extends Controller
 
   public function SelectVeeam()
 {
+    // ✅ Id “genérico” para Veeam (si lo ocupas en UI)
     $siteAppId = (int) DB::table('app_service')
         ->where('nameService', 'like', '%Veeam%')
         ->orderBy('id')
@@ -323,7 +337,11 @@ class ClienteVeeamController extends Controller
         ->groupBy('client_id', 'siteApp');
 
     $items = ClienteVeeam::query()
+        ->from('c_veeam')
         ->where('c_veeam.activo', 1)
+
+        // ✅ Join para saber “a qué veeam (app_service) pertenece”
+        ->leftJoin('app_service as aps', 'aps.id', '=', 'c_veeam.app')
 
         // last_dateRest
         ->leftJoinSub($last, 'lr', function ($join) {
@@ -331,13 +349,13 @@ class ClienteVeeamController extends Controller
                  ->on('c_veeam.app', '=', 'lr.siteApp');
         })
 
-        // ✅ join activos
+        // activos
         ->leftJoinSub($active, 'ac', function ($join) {
             $join->on('c_veeam.id', '=', 'ac.client_id')
                  ->on('c_veeam.app', '=', 'ac.siteApp');
         })
 
-        // ✅ excluir los que tienen activo
+        // excluir los que tienen activo
         ->whereNull('ac.has_active')
 
         ->orderBy('c_veeam.nameCV')
@@ -347,16 +365,27 @@ class ClienteVeeamController extends Controller
             'c_veeam.nameCV',
             'c_veeam.backup',
             'c_veeam.jobs',
+            'c_veeam.app', // ✅ id app_service (esto identifica qué veeam es)
+            DB::raw('aps.nameService as veeam_name'), // ✅ nombre del veeam
             DB::raw('lr.last_dateRest as last_dateRest'),
         ])
         ->map(fn ($c) => [
-            'id' => $c->id,
-            'numCV' => $c->numCV,
-            'nameCV' => $c->nameCV,
-            'backup' => $c->backup,
-            'jobs' => $c->jobs,
+            'id'            => (int) $c->id,
+            'numCV'         => $c->numCV,
+            'nameCV'        => $c->nameCV,
+            'backup'        => $c->backup,
+            'jobs'          => $c->jobs,
             'last_dateRest' => $c->last_dateRest,
-            'label' => trim($c->numCV.' - '.$c->nameCV),
+
+            // ✅ NUEVO: a qué “Veeam” pertenece (app_service)
+            'veeam_id'      => (int) $c->app,
+            'veeam_name'    => $c->veeam_name ?? null,
+
+            // ✅ NUEVO: site para que el front no lo invente
+            'site'          => 'veeam',
+
+            // label UI
+            'label'         => trim($c->numCV.' - '.$c->nameCV),
         ])
         ->values();
 
@@ -367,6 +396,7 @@ class ClienteVeeamController extends Controller
         'siteAppId' => $siteAppId,
     ], 200);
 }
+
 
 
 }

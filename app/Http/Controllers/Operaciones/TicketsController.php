@@ -8,6 +8,12 @@ use App\Models\Operaciones\Tickets;
 use App\Models\Operaciones\Guardias;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Illuminate\Database\QueryException;
+use Throwable;
 
 class TicketsController extends Controller
 {
@@ -421,6 +427,221 @@ class TicketsController extends Controller
         'ticket'  => $ticket,
         'message' => 'Ticket actualizado correctamente.',
     ], 200);
+}
+
+public function updateCloseTickets(Request $request)
+{
+    $traceId = (string) Str::uuid();
+
+    try {
+        Log::info('[updateCloseTickets] START', [
+            'trace_id' => $traceId,
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'ip' => $request->ip(),
+            'user_id' => optional($request->user())->id,
+        ]);
+
+        $authUser = $request->user();
+        if (! $authUser) {
+            Log::warning('[updateCloseTickets] No autenticado', ['trace_id' => $traceId]);
+            abort(401, 'No autenticado.');
+        }
+
+        $authUserId = (int) $authUser->id;
+
+        $isAdmin = method_exists($authUser, 'isAdmin')
+            ? (bool) $authUser->isAdmin()
+            : $authUser->roles()->where('name', 'Administrador')->exists();
+
+        Log::info('[updateCloseTickets] Auth context', [
+            'trace_id' => $traceId,
+            'auth_user_id' => $authUserId,
+            'is_admin' => $isAdmin,
+        ]);
+
+        Log::info('[updateCloseTickets] Incoming payload summary', [
+            'trace_id' => $traceId,
+            'tickets_count' => is_array($request->input('tickets')) ? count($request->input('tickets')) : null,
+            'first_ticket' => $request->input('tickets.0'),
+        ]);
+
+        $data = $request->validate([
+            'tickets' => ['required', 'array', 'min:1'],
+
+            'tickets.*.id' => ['required', 'integer', Rule::exists('tickets', 'id')],
+            'tickets.*.numTicket' => ['required', 'integer'],
+            'tickets.*.numTicketNoct' => ['nullable', 'integer'],
+            'tickets.*.titleTicket' => ['required', 'string', 'max:100'],
+            'tickets.*.descriptionTicket' => ['required', 'string', 'max:2000'],
+            'tickets.*.status' => ['required', 'integer', Rule::in([1, 2])],
+            'tickets.*.assigned_user_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
+            ],
+        ]);
+
+        // guardia activa del auth (para linkear tickets si aplica)
+        $activeGuardiaId = Guardias::query()
+            ->where('id_user', $authUserId)
+            ->where('status', 1)
+            ->whereNull('dateFinish')
+            ->orderByDesc('dateInit')
+            ->value('id');
+
+        Log::info('[updateCloseTickets] Active guardia lookup', [
+            'trace_id' => $traceId,
+            'active_guardia_id' => $activeGuardiaId,
+        ]);
+
+        if (! $activeGuardiaId) {
+            Log::warning('[updateCloseTickets] No hay guardia activa (solo update tickets)', [
+                'trace_id' => $traceId,
+                'auth_user_id' => $authUserId,
+            ]);
+            // OJO: aquí puedes decidir si permitir actualizar tickets sin guardia activa.
+            // Si quieres permitirlo, elimina este abort.
+            abort(422, 'No hay guardia activa.');
+        }
+
+        return DB::transaction(function () use ($data, $authUserId, $isAdmin, $activeGuardiaId, $traceId) {
+
+            Log::info('[updateCloseTickets] TX START', [
+                'trace_id' => $traceId,
+                'guardia_id' => $activeGuardiaId,
+            ]);
+
+            $ids = collect($data['tickets'])->pluck('id')->map(fn ($v) => (int) $v)->all();
+
+            $ticketsDb = Tickets::query()
+                ->whereIn('id', $ids)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            Log::info('[updateCloseTickets] Tickets loaded & locked', [
+                'trace_id' => $traceId,
+                'db_count' => $ticketsDb->count(),
+            ]);
+
+            $updatedIds = [];
+
+            foreach ($data['tickets'] as $row) {
+                $id = (int) $row['id'];
+
+                /** @var Tickets $ticket */
+                $ticket = $ticketsDb->get($id);
+                if (! $ticket) {
+                    abort(404, "Ticket no encontrado: {$id}");
+                }
+
+                // ✅ autorización: NO-admin solo si assigned_user_id = él
+                if (! $isAdmin && (int) $ticket->assigned_user_id !== $authUserId) {
+                    abort(403, "No puedes editar el ticket {$id} (no está asignado a ti).");
+                }
+
+                $nextStatus = (int) $row['status'];
+                $nextAssignedUserId = (int) ($ticket->assigned_user_id ?? 0);
+
+                if ($isAdmin) {
+                    if (! empty($row['assigned_user_id'])) {
+                        $nextAssignedUserId = (int) $row['assigned_user_id'];
+                    }
+                } else {
+                    // no-admin:
+                    // - si concluye -> se asigna a sí mismo
+                    // - si está activo -> NO puede reasignarse a sí mismo (tu regla)
+                    if ($nextStatus === 2) {
+                        $nextAssignedUserId = $authUserId;
+                    } else {
+                        $candidate = ! empty($row['assigned_user_id'])
+                            ? (int) $row['assigned_user_id']
+                            : (int) ($ticket->assigned_user_id ?? 0);
+
+                        if ($candidate === $authUserId) {
+                            abort(422, "Ticket {$id}: cuando está activo, no puedes reasignarte a ti mismo.");
+                        }
+
+                        $nextAssignedUserId = $candidate;
+                    }
+                }
+
+                $ticket->numTicket = (int) $row['numTicket'];
+                $ticket->numTicketNoct = $row['numTicketNoct'] !== null ? (int) $row['numTicketNoct'] : null;
+                $ticket->titleTicket = $row['titleTicket'];
+                $ticket->descriptionTicket = $row['descriptionTicket'];
+                $ticket->status = $nextStatus;
+                $ticket->assigned_user_id = $nextAssignedUserId;
+
+                // ✅ liga a guardia activa del usuario que está cerrando
+                $ticket->id_guardia = (int) $activeGuardiaId;
+
+                $ticket->save();
+                $updatedIds[] = $ticket->id;
+            }
+
+            $ticketsToSend = Tickets::query()
+                ->where('id_guardia', $activeGuardiaId)
+                ->with(['creator:id,name,email', 'assignedUser:id,name,email'])
+                ->orderBy('id')
+                ->get();
+
+            Log::info('[updateCloseTickets] TX OK', [
+                'trace_id' => $traceId,
+                'guardia_id' => (int) $activeGuardiaId,
+                'updated_ticket_ids' => $updatedIds,
+                'tickets_to_send_count' => $ticketsToSend->count(),
+            ]);
+
+            return response()->json([
+                'trace_id' => $traceId,
+                'message' => 'Tickets actualizados correctamente.',
+                'guardia_id' => (int) $activeGuardiaId,
+                'updated_ticket_ids' => $updatedIds,
+                'tickets' => $ticketsToSend,
+            ]);
+        });
+
+    } catch (ValidationException $e) {
+        return response()->json([
+            'trace_id' => $traceId,
+            'message' => 'Validación fallida.',
+            'errors' => $e->errors(),
+        ], 422);
+
+    } catch (HttpExceptionInterface $e) {
+        return response()->json([
+            'trace_id' => $traceId,
+            'message' => $e->getMessage(),
+        ], $e->getStatusCode());
+
+    } catch (QueryException $e) {
+        Log::error('[updateCloseTickets] DB QUERY ERROR', [
+            'trace_id' => $traceId,
+            'message' => $e->getMessage(),
+            'sql' => $e->getSql(),
+            'bindings' => $e->getBindings(),
+        ]);
+
+        return response()->json([
+            'trace_id' => $traceId,
+            'message' => 'Error de base de datos.',
+        ], 500);
+
+    } catch (Throwable $e) {
+        Log::error('[updateCloseTickets] UNEXPECTED ERROR', [
+            'trace_id' => $traceId,
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+
+        return response()->json([
+            'trace_id' => $traceId,
+            'message' => 'Error inesperado al actualizar tickets.',
+        ], 500);
+    }
 }
 
     public function show(string $id, Request $request)

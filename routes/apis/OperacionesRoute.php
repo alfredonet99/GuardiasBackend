@@ -33,11 +33,12 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::post("/guardias/store",[GuardiasController::class, 'store']);
         Route::get('/guardias/active', [GuardiasController::class, 'active']);
         Route::get('/guardias/close', [GuardiasController::class, 'closeData']);
-        Route::patch('/guardias/close/tickets', [GuardiasController::class, 'updateCloseTicket']);
+        Route::post('/guardias/close/data', [GuardiasController::class, 'closeFinal']);
 
 
         Route::get('/tickets',[TicketsController::class,'index']);
         Route::post('/tickets/crear',[TicketsController::class,'store']);
+        Route::patch('/tickets/update-tickets',[TicketsController::class,'updateCloseTickets']);
         Route::get('/tickets/{id}/editar',[TicketsController::class,'edit']);
         Route::put('/tickets/{id}/update',[TicketsController::class,'update']);
         Route::get('/tickets/{id}/ver-ticket',[TicketsController::class,'show']);
@@ -45,6 +46,10 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
 
         Route::get('/monitoreos',[MonitoreoController::class,'index']);
         Route::post('/monitoreos/store',[MonitoreoController::class,'store']);
+        Route::get('/monitoreos/{id}/edit',[MonitoreoController::class,'edit']);
+        Route::put('/monitoreos/{id}/update',[MonitoreoController::class,'update']);
+        Route::get('/monitoreos/{id}/show',[MonitoreoController::class,'show']);
         Route::patch('/monitoreos/{id}/status',[MonitoreoController::class,'statusMonitoreo']);
-
+        Route::get('/monitoreos/pendientes/veeam',[MonitoreoController::class,'pendientesVeeam']);
+        Route::patch('/monitoreos/close/guard',[MonitoreoController::class,'MonitGuardEdit']);
     });
