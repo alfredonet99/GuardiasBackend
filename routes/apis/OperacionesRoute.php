@@ -43,6 +43,7 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::put('/tickets/{id}/update',[TicketsController::class,'update']);
         Route::get('/tickets/{id}/ver-ticket',[TicketsController::class,'show']);
         Route::patch('/tickets/{id}/status', [TicketsController::class, 'StatusTicket']);
+        Route::delete('/tickets/{id}/delete',[TicketsController::class,'destroy']);
 
         Route::get('/monitoreos',[MonitoreoController::class,'index']);
         Route::post('/monitoreos/store',[MonitoreoController::class,'store']);

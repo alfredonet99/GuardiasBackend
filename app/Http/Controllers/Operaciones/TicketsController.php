@@ -214,72 +214,68 @@ class TicketsController extends Controller
 
 
     public function store(Request $request)
-    {
-        $authUser   = $request->user();
-        $authUserId = (int) $authUser->id;
+{
+    $authUser   = $request->user();
+    $authUserId = (int) $authUser->id;
 
-        // ✅ Determinar si es admin (ajusta el role name si aplica)
-        $isAdmin = method_exists($authUser, 'isAdmin')
-            ? (bool) $authUser->isAdmin()
-            : $authUser->roles()->where('name', 'Administrador')->exists();
+    $isAdmin = method_exists($authUser, 'isAdmin')
+        ? (bool) $authUser->isAdmin()
+        : $authUser->roles()->where('name', 'Administrador')->exists();
 
-        // ✅ Validación (usuarios ACTIVOS)
-        $data = $request->validate([
-            'numTicket'         => ['required', 'integer'],
-            'numTicketNoct'     => ['nullable', 'integer'],
+    $data = $request->validate([
+        'numTicket' => [
+            'required',
+            'integer',
+            Rule::unique('tickets', 'numTicket'), // ✅ ÚNICO
+        ],
+        'numTicketNoct'     => ['nullable', 'integer'], // ✅ SE PUEDE REPETIR
 
-            // ✅ asignado debe existir y estar Activo = 1
-            'assigned_user_id'  => [
-                'required',
-                'integer',
-                Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
-            ],
+        'assigned_user_id'  => [
+            'required',
+            'integer',
+            Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
+        ],
 
-            'titleTicket'       => ['required', 'string', 'max:100'],
-            'descriptionTicket' => ['required', 'string', 'max:2000'],
+        'titleTicket'       => ['required', 'string', 'max:100'],
+        'descriptionTicket' => ['required', 'string', 'max:2000'],
 
-            // ✅ creator solo si viene; y si viene, también debe existir y estar Activo = 1
-            'creator_user_id'   => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
-            ],
-        ]);
+        'creator_user_id'   => [
+            'nullable',
+            'integer',
+            Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
+        ],
+    ]);
 
-        // ✅ Determinar creador REAL
-        $creatorUserId = $authUserId;
-
-        if ($isAdmin && !empty($data['creator_user_id'])) {
-            $creatorUserId = (int) $data['creator_user_id'];
-        }
-
-        // ✅ Detectar guardia activa del creador real
-        $guardiaId = Guardias::where('id_user', $creatorUserId)
-            ->where('status', 1)
-            ->orderByDesc('dateInit')
-            ->value('id');
-
-        // ✅ Crear ticket (sin depender del frontend para status / guardia)
-        $ticket = Tickets::create([
-            'numTicket'          => (int) $data['numTicket'],
-            'numTicketNoct'      => $data['numTicketNoct'] !== null ? (int) $data['numTicketNoct'] : null,
-            'user_create_ticket' => $creatorUserId,
-            'assigned_user_id'   => (int) $data['assigned_user_id'],
-            'titleTicket'        => $data['titleTicket'],
-            'descriptionTicket'  => $data['descriptionTicket'],
-            'status'             => 1,
-            'id_guardia'         => $guardiaId,
-        ]);
-
-        return response()->json([
-            'ticket' => $ticket,
-            'guardia_detectada' => (bool) $guardiaId,
-            'guardia_id' => $guardiaId,
-            'message' => $guardiaId
-                ? 'Ticket creado (guardia activa detectada).'
-                : 'Ticket creado (sin guardia activa).',
-        ], 201);
+    $creatorUserId = $authUserId;
+    if ($isAdmin && !empty($data['creator_user_id'])) {
+        $creatorUserId = (int) $data['creator_user_id'];
     }
+
+    $guardiaId = Guardias::where('id_user', $creatorUserId)
+        ->where('status', 1)
+        ->orderByDesc('dateInit')
+        ->value('id');
+
+    $ticket = Tickets::create([
+        'numTicket'          => (int) $data['numTicket'],
+        'numTicketNoct'      => $data['numTicketNoct'] !== null ? (int) $data['numTicketNoct'] : null,
+        'user_create_ticket' => $creatorUserId,
+        'assigned_user_id'   => (int) $data['assigned_user_id'],
+        'titleTicket'        => $data['titleTicket'],
+        'descriptionTicket'  => $data['descriptionTicket'],
+        'status'             => 1,
+        'id_guardia'         => $guardiaId,
+    ]);
+
+    return response()->json([
+        'ticket' => $ticket,
+        'guardia_detectada' => (bool) $guardiaId,
+        'guardia_id' => $guardiaId,
+        'message' => $guardiaId
+            ? 'Ticket creado (guardia activa detectada).'
+            : 'Ticket creado (sin guardia activa).',
+    ], 201);
+}
 
    public function edit(string $id, Request $request)
     {
@@ -691,10 +687,70 @@ public function updateCloseTickets(Request $request)
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        //
+    public function destroy(string $id, Request $request)
+{
+    $user = $request->user();
+
+    if (! $user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No autenticado.',
+        ], 401);
     }
+
+    // ✅ SOLO estos roles pueden eliminar (sin excepciones)
+    $canDelete = $user->roles()
+        ->whereIn('name', ['Administrador', 'Service Support Cloud Coordinator'])
+        ->exists();
+
+    if (! $canDelete) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No tienes permisos para eliminar tickets.',
+        ], 403);
+    }
+
+    $ticket = Tickets::query()->whereKey($id)->first();
+
+    if (! $ticket) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Ticket no encontrado.',
+        ], 404);
+    }
+
+    // ✅ Regla: si está Concluido (2) NO se elimina
+    if ((int) $ticket->status === 2) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No se puede eliminar un ticket Concluido.',
+        ], 422);
+    }
+
+    try {
+        $ticket->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ticket eliminado correctamente.',
+        ], 200);
+
+    } catch (Throwable $e) {
+        Log::error('[Tickets.destroy] Error al eliminar ticket', [
+            'ticket_id' => $id,
+            'user_id'   => (int) $user->id,
+            'message'   => $e->getMessage(),
+            'file'      => $e->getFile(),
+            'line'      => $e->getLine(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No se pudo eliminar el ticket. Intenta de nuevo.',
+        ], 500);
+    }
+}
+
 
     public function StatusTicket(int $id, Request $request)
     {
