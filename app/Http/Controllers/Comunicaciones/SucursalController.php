@@ -30,7 +30,7 @@ class SucursalController extends Controller
             '3' => 'Respaldos',
         ];
 
-         $this->sucursales = [
+        $this->sucursales = [
             '1' => 'VALLE',
             '2' => 'GDL',
             '3' => 'MTY',
@@ -45,14 +45,11 @@ class SucursalController extends Controller
     $query = Sucursales::query();
 
     if ($search !== '') {
-        // Mapas invertidos para resolver texto => id
         $platByName = array_change_key_case(array_flip($this->plataforma), CASE_LOWER); // 'aruba' => '1'
         $sucByName  = array_change_key_case(array_flip($this->sucursales), CASE_LOWER); // 'valle' => '1'
 
-        // Normaliza: quita espacios dobles
         $searchNorm = preg_replace('/\s+/', ' ', $search);
 
-        // Detectar si la búsqueda contiene palabras clave (ej. "aruba", "valle")
         $tokens = array_values(array_filter(explode(' ', $searchNorm)));
 
         $platIds = [];

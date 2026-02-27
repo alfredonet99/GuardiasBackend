@@ -23,45 +23,55 @@ class ClienteVeeamController extends Controller
         ];
     }
    
-    public function index(Request $request)
-    {
-        $search   = trim((string) $request->query('search', ''));
-        $inactive = $request->query('inactive', null); 
-        $perPage  = 30;
+  public function index(Request $request)
+{
+    $search   = trim((string) $request->query('search', ''));
+    $inactive = $request->query('inactive', null); 
+    $perPage  = 30;
 
-        $query = ClienteVeeam::query()->with('AppCV');
+    $query = ClienteVeeam::query()
+        ->with('AppCV')
+        ->select('c_veeam.*') // 🔥 tabla correcta
+        ->selectSub(function ($sub) {
+            $sub->from('monitoreos')
+                ->select('dateRest')
+                ->whereColumn('monitoreos.client_id', 'c_veeam.id') // 🔥 tabla correcta
+                ->whereNotNull('dateRest')
+                ->orderByDesc('dateRest')
+                ->limit(1);
+        }, 'last_restore_date');
 
-        if ($inactive === '0') {
-            $query->where('activo', 1);
-        } elseif ($inactive === '1') {
-            $query->where('activo', 0);
-        }
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-
-                // numCV exacto si es número
-                if (ctype_digit($search)) {
-                    $q->orWhere('numCV', (int) $search);
-                }
-
-                $q->orWhere('numCV', 'like', "%{$search}%")
-                ->orWhere('nameCV', 'like', "%{$search}%")
-                ->orWhere('backup', 'like', "%{$search}%");
-
-                $q->orWhereHas('AppCV', function ($sub) use ($search) {
-                    $sub->where('nameService', 'like', "%{$search}%");
-                });
-            });
-        }
-
-        $clientes = $query
-            ->orderBy('id')
-            ->paginate($perPage);
-
-        return response()->json($clientes);
+    // Filtro activo/inactivo
+    if ($inactive === '0') {
+        $query->where('activo', 1);
+    } elseif ($inactive === '1') {
+        $query->where('activo', 0);
     }
 
+    // Buscador
+    if ($search !== '') {
+        $query->where(function ($q) use ($search) {
+
+            if (ctype_digit($search)) {
+                $q->orWhere('numCV', (int) $search);
+            }
+
+            $q->orWhere('numCV', 'like', "%{$search}%")
+              ->orWhere('nameCV', 'like', "%{$search}%")
+              ->orWhere('backup', 'like', "%{$search}%");
+
+            $q->orWhereHas('AppCV', function ($sub) use ($search) {
+                $sub->where('nameService', 'like', "%{$search}%");
+            });
+        });
+    }
+
+    $clientes = $query
+        ->orderBy('id')
+        ->paginate($perPage);
+
+    return response()->json($clientes);
+}
 
   
     public function store(Request $request)

@@ -44,6 +44,9 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('/tickets/{id}/ver-ticket',[TicketsController::class,'show']);
         Route::patch('/tickets/{id}/status', [TicketsController::class, 'StatusTicket']);
         Route::delete('/tickets/{id}/delete',[TicketsController::class,'destroy']);
+        Route::get('/tickets/dashboard',[TicketsController::class,'dashboardTickets']);
+        Route::patch('/tickets/{id}/close', [TicketsController::class, 'CloseTicket']);
+
 
         Route::get('/monitoreos',[MonitoreoController::class,'index']);
         Route::post('/monitoreos/store',[MonitoreoController::class,'store']);
@@ -53,4 +56,5 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::patch('/monitoreos/{id}/status',[MonitoreoController::class,'statusMonitoreo']);
         Route::get('/monitoreos/pendientes/veeam',[MonitoreoController::class,'pendientesVeeam']);
         Route::patch('/monitoreos/close/guard',[MonitoreoController::class,'MonitGuardEdit']);
+        Route::get('/monitoreos/dashboard',[MonitoreoController::class,'MonitDash']);
     });

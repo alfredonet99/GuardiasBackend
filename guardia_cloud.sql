@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 17-02-2026 a las 01:34:02
+-- Tiempo de generación: 27-02-2026 a las 06:46:46
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -198,55 +198,44 @@ CREATE TABLE `info_guard` (
 --
 
 INSERT INTO `info_guard` (`id`, `id_user`, `dateInit`, `dateFinish`, `status`, `created_at`, `updated_at`) VALUES
-(1, 27, '2025-07-31 01:08:17', NULL, 3, '2025-07-31 19:08:17', '2025-12-30 18:38:59'),
-(2, 26, '2025-08-04 00:34:09', '2025-08-04 09:38:00', 2, '2025-08-04 18:34:09', '2025-08-05 03:39:03'),
-(4, 28, '2025-08-04 18:39:38', '2025-08-05 09:05:00', 3, '2025-08-05 12:39:38', '2025-08-06 03:07:03'),
-(5, 27, '2025-08-05 15:04:04', '2026-01-22 13:35:34', 3, '2025-08-06 09:04:04', '2026-01-22 19:35:34'),
-(6, 29, '2025-08-07 18:35:10', '2025-08-08 09:26:00', 2, '2025-08-08 12:35:10', '2025-08-09 03:30:01'),
-(7, 27, '2025-08-11 18:35:21', '2025-08-12 09:00:00', 2, '2025-08-12 12:35:21', '2025-08-13 03:03:04'),
-(8, 29, '2025-08-13 18:29:20', '2025-08-14 09:19:00', 2, '2025-08-14 12:29:20', '2025-08-15 03:19:41'),
-(9, 27, '2025-08-14 17:45:30', '2025-12-29 22:07:01', 3, '2025-08-15 11:45:30', '2025-08-16 03:01:37'),
-(10, 26, '2025-08-15 19:01:57', '2025-08-16 09:22:00', 2, '2025-08-16 13:01:57', '2025-08-17 03:24:26'),
-(11, 27, '2025-08-16 08:59:48', '2025-08-17 09:00:00', 2, '2025-08-17 02:59:48', '2025-08-18 03:00:37'),
-(12, 26, '2025-08-17 09:07:10', '2025-08-17 23:59:00', 2, '2025-08-18 03:07:10', '2025-08-18 18:01:17'),
-(13, 22, '2025-10-08 10:19:11', '2025-10-13 17:48:00', 2, '2025-10-09 04:19:11', '2025-10-14 12:21:29'),
-(14, 22, '2025-10-13 18:28:13', '2025-10-13 18:32:00', 2, '2025-10-14 12:28:13', '2025-10-14 12:47:14'),
-(15, 22, '2025-10-13 18:52:41', '2025-10-13 18:52:00', 2, '2025-10-14 12:52:41', '2025-10-14 12:53:12'),
-(16, 27, '2025-11-18 23:27:27', '2025-12-24 12:58:01', 2, '2025-11-19 17:27:27', '2025-11-19 17:27:27'),
-(17, 22, '2025-11-24 21:19:34', '2025-12-29 22:07:06', 2, '2025-11-25 03:19:34', '2025-11-25 03:19:34'),
-(18, 27, '2025-12-26 09:30:08', '2025-12-26 09:30:00', 2, '2025-12-26 15:30:08', '2025-12-26 15:30:35'),
-(19, 26, '2025-12-30 12:19:31', '2025-12-30 12:39:02', 3, '2025-12-30 18:19:31', '2025-12-30 18:39:02'),
-(20, 26, '2025-12-30 12:45:53', '2025-12-30 12:47:05', 3, '2025-12-30 18:45:53', '2025-12-30 18:47:05'),
-(21, 26, '2025-12-30 12:52:33', '2026-01-22 15:49:59', 3, '2025-12-30 18:52:33', '2026-01-22 21:49:59'),
-(22, 27, '2025-12-30 17:37:52', '2026-01-02 12:00:01', 3, '2025-12-30 23:37:52', '2026-01-02 18:00:01'),
-(23, 26, '2026-01-02 14:11:27', '2026-01-05 12:00:01', 3, '2026-01-02 20:11:27', '2026-01-05 18:00:01'),
-(24, 26, '2026-01-05 16:43:39', '2026-01-09 16:00:01', 3, '2026-01-05 22:43:39', '2026-01-09 22:00:01'),
-(25, 27, '2026-01-13 12:23:29', '2026-01-22 14:12:24', 3, '2026-01-13 18:23:29', '2026-01-22 20:12:24'),
-(26, 27, '2026-01-20 13:41:27', '2026-01-22 15:51:25', 3, NULL, '2026-01-22 21:51:25'),
-(27, 27, '2026-01-27 10:03:23', '2026-01-27 10:28:02', 2, '2026-01-27 16:03:23', '2026-01-27 16:28:02'),
-(28, 27, '2026-01-27 10:42:24', '2026-01-27 11:40:45', 2, '2026-01-27 16:42:24', '2026-01-27 17:40:45'),
-(29, 27, '2026-01-27 11:43:30', '2026-01-27 11:46:50', 2, '2026-01-27 17:43:30', '2026-01-27 17:46:50'),
-(30, 27, '2026-01-27 11:47:49', '2026-01-27 11:55:45', 2, '2026-01-27 17:47:49', '2026-01-27 17:55:45'),
-(31, 27, '2026-01-27 11:56:06', '2026-02-03 17:19:32', 2, '2026-01-27 17:56:06', '2026-02-03 23:19:32'),
-(32, 27, '2026-02-04 10:37:22', '2026-02-04 10:52:15', 2, '2026-02-04 16:37:22', '2026-02-04 16:52:15'),
-(33, 27, '2026-02-04 10:53:07', '2026-02-04 10:55:34', 2, '2026-02-04 16:53:07', '2026-02-04 16:55:34'),
-(34, 27, '2026-02-04 10:55:40', '2026-02-04 10:56:05', 2, '2026-02-04 16:55:40', '2026-02-04 16:56:05'),
-(35, 27, '2026-02-04 10:56:20', '2026-02-04 11:11:20', 2, '2026-02-04 16:56:20', '2026-02-04 17:11:20'),
-(36, 27, '2026-02-04 12:11:37', '2026-02-04 12:24:13', 2, '2026-02-04 18:11:37', '2026-02-04 18:24:13'),
-(37, 27, '2026-02-04 12:26:39', '2026-02-04 12:29:55', 2, '2026-02-04 18:26:39', '2026-02-04 18:29:55'),
-(38, 27, '2026-02-04 17:03:35', '2026-02-04 17:05:05', 2, '2026-02-04 23:03:35', '2026-02-04 23:05:05'),
-(39, 27, '2026-02-04 17:11:23', '2026-02-04 17:12:15', 2, '2026-02-04 23:11:23', '2026-02-04 23:12:15'),
-(40, 27, '2026-02-04 17:12:44', '2026-02-04 17:42:45', 2, '2026-02-04 23:12:44', '2026-02-04 23:42:45'),
-(41, 27, '2026-02-04 17:44:44', '2026-02-05 15:15:31', 2, '2026-02-04 23:44:44', '2026-02-05 21:15:31'),
-(42, 27, '2026-02-05 16:31:45', '2026-02-05 18:26:08', 2, '2026-02-05 22:31:45', '2026-02-06 00:26:08'),
-(43, 27, '2026-02-06 10:57:01', '2026-02-06 11:27:33', 2, '2026-02-06 16:57:01', '2026-02-06 17:27:33'),
-(44, 27, '2026-02-06 11:40:55', '2026-02-06 11:41:27', 2, '2026-02-06 17:40:55', '2026-02-06 17:41:27'),
-(45, 27, '2026-02-06 11:42:56', '2026-02-06 11:43:23', 2, '2026-02-06 17:42:56', '2026-02-06 17:43:23'),
-(46, 27, '2026-02-06 12:02:27', '2026-02-06 12:02:52', 2, '2026-02-06 18:02:27', '2026-02-06 18:02:52'),
-(47, 27, '2026-02-06 12:16:50', '2026-02-06 12:17:04', 2, '2026-02-06 18:16:50', '2026-02-06 18:17:04'),
-(48, 27, '2026-02-09 11:21:39', '2026-02-09 11:23:24', 2, '2026-02-09 17:21:39', '2026-02-09 17:23:24'),
-(49, 27, '2026-02-09 11:31:28', '2026-02-10 12:44:07', 2, '2026-02-09 17:31:28', '2026-02-10 18:44:07'),
-(50, 27, '2026-02-16 10:08:59', NULL, 1, '2026-02-16 16:08:59', '2026-02-16 16:08:59');
+(152, 30, '2026-02-26 19:18:37', NULL, 1, '2026-02-27 01:18:37', '2026-02-27 01:18:37');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `microsoft_m`
+--
+
+CREATE TABLE `microsoft_m` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `serviceName` int(11) NOT NULL,
+  `revisionDate` date NOT NULL,
+  `state` int(11) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `ejecution` varchar(255) NOT NULL,
+  `id_user` int(11) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `microsoft_m`
+--
+
+INSERT INTO `microsoft_m` (`id`, `serviceName`, `revisionDate`, `state`, `description`, `ejecution`, `id_user`, `created_at`, `updated_at`) VALUES
+(1, 3, '2026-02-17', 2, 'prueba ok', 'todo ok', 31, '2026-02-21 00:30:54', '2026-02-21 00:30:54'),
+(2, 4, '2026-02-02', 3, 'toidoo bie 1', 'toido bien 1', 31, '2026-02-21 00:32:45', '2026-02-21 00:32:45'),
+(3, 6, '2026-01-28', 3, 'jbasfdbkjsdbjksjkasbdkjsa', 'otod bien 219292', 31, '2026-02-21 00:32:45', '2026-02-21 00:32:45'),
+(4, 3, '2026-02-19', 2, 'sadsdasdsadadadsad', '8525fd55fsdf', 31, '2026-02-21 00:38:04', '2026-02-21 00:38:04'),
+(5, 1, '2026-02-10', 3, 'fsdsdfsdff', 'fdfdfsff', 31, '2026-02-21 00:40:38', '2026-02-21 00:40:38'),
+(6, 2, '2026-02-11', 2, 'gvsdf gfsdff fda asd', 'fdsdadasff', 31, '2026-02-21 00:41:07', '2026-02-21 00:41:07'),
+(7, 2, '2026-02-11', 1, 'fdsadddads', 'fdsfdff', 31, '2026-02-21 00:46:13', '2026-02-21 00:46:13'),
+(8, 5, '2026-02-11', 2, 'sadsadsadsadsadsad', 'ddsaadsadsadsadsad', 31, '2026-02-21 00:46:31', '2026-02-21 00:46:31'),
+(9, 3, '2026-02-11', 1, 'sadsadsdadsa', 'ffdsad', 31, '2026-02-21 00:48:58', '2026-02-21 00:48:58'),
+(10, 2, '2026-02-11', 2, 'sadsadsadsadsadasdaasdasdsada', 'sadsaddsad', 31, '2026-02-21 01:03:15', '2026-02-21 01:03:15'),
+(11, 4, '2026-02-10', 2, 'cdsadsaddasddsadsadsadsadsa', 'dsadsadasd', 31, '2026-02-21 01:03:15', '2026-02-21 01:03:15'),
+(12, 6, '2026-02-22', 2, 'CAIDA DE SERVIDOR', 'CAIDA DE SERVIDOR', 31, '2026-02-23 19:46:21', '2026-02-23 19:46:21'),
+(13, 5, '2026-02-23', 1, 'NO HUBO INCIDENCIA.', 'TODO OK', 31, '2026-02-23 19:46:21', '2026-02-23 19:46:21');
 
 -- --------------------------------------------------------
 
@@ -272,7 +261,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (21, '2025_12_18_111630_create_areas_table', 2),
 (22, '2025_12_30_182138_create_tickets_table', 3),
 (23, '2026_01_12_144145_create_monitoreos_table', 4),
-(24, '2026_01_16_161547_create_sucursales_table', 5);
+(24, '2026_01_16_161547_create_sucursales_table', 5),
+(25, '2026_02_20_144634_create_microsoft_m_table', 6),
+(26, '2026_02_22_221015_create_monit_redes_table', 7);
 
 -- --------------------------------------------------------
 
@@ -312,7 +303,8 @@ INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 (11, 'App\\Models\\User', 26),
 (14, 'App\\Models\\User', 24),
 (16, 'App\\Models\\User', 16),
-(16, 'App\\Models\\User', 23);
+(16, 'App\\Models\\User', 23),
+(16, 'App\\Models\\User', 31);
 
 -- --------------------------------------------------------
 
@@ -341,9 +333,41 @@ CREATE TABLE `monitoreos` (
 
 INSERT INTO `monitoreos` (`id`, `siteApp`, `client_id`, `dateRest`, `estatus`, `observacion`, `concluido`, `id_guard`, `user_Cre`, `user_Upd`, `created_at`, `updated_at`) VALUES
 (1, 1, 8, '2025-11-28', 4, 'Job en progreso', 1, NULL, 28, 28, '2025-12-17 14:35:08', '2026-01-30 18:05:21'),
-(2, 1, 16, '2026-01-08', 3, 'Job finished with error at 11/11/2025 10:10\nError: Failed to update the backup encryption state. Failed to connect to the Veeam Cloud Connect service\nNo se pudo realizar una llamada a SSPI; consulte la excepción interna.\nEl identificador especificado no es válido', 1, NULL, 28, 28, '2025-12-29 15:32:00', '2026-01-08 14:35:50'),
-(3, 1, 14, '2026-01-18', 5, 'Repositorio saturado.', 1, NULL, 27, 27, '2026-01-27 14:37:30', '2026-01-30 18:05:21'),
-(4, 1, 18, '2026-02-06', 3, 'Se tienen 4 jobs fuera de secuencia se esta trabajando en hacer el ajuste para tenerlos en linea', 1, NULL, 27, 27, '2026-02-02 14:55:00', '2026-02-11 16:02:37');
+(2, 1, 16, '2026-01-08', 3, 'Job finished with error at 11/11/2025 10:10\nError: Failed to update the backup encryption state. Failed to connect to the Veeam Cloud Connect service\nNo se pudo realizar una llamada a SSPI; consulte la excepción interna.\nEl identificador especificado no es válido', 1, 50, 28, 12, '2025-12-29 15:32:00', '2026-02-25 16:51:23'),
+(3, 1, 14, '2026-01-18', 5, 'Repositorio saturado.', 1, 50, 27, 27, '2026-01-27 14:37:30', '2026-02-25 16:57:30'),
+(4, 1, 18, '2026-02-06', 3, 'Se tienen 4 jobs fuera de secuencia se esta trabajando en hacer el ajuste para tenerlos en linea', 1, 50, 27, 27, '2026-02-02 14:55:00', '2026-02-25 23:48:03');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `monit_redes`
+--
+
+CREATE TABLE `monit_redes` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `sucursal_id` int(11) NOT NULL,
+  `dateRed` date NOT NULL,
+  `statusRed` int(11) NOT NULL,
+  `time_down` time DEFAULT NULL,
+  `time_up` time DEFAULT NULL,
+  `affectation` varchar(150) NOT NULL,
+  `reason` text DEFAULT NULL,
+  `note` varchar(200) DEFAULT NULL,
+  `statusMonit` int(11) NOT NULL,
+  `user_create` int(11) NOT NULL,
+  `user_update` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `monit_redes`
+--
+
+INSERT INTO `monit_redes` (`id`, `sucursal_id`, `dateRed`, `statusRed`, `time_down`, `time_up`, `affectation`, `reason`, `note`, `statusMonit`, `user_create`, `user_update`, `created_at`, `updated_at`) VALUES
+(1, 29, '2026-02-16', 3, '12:00:00', NULL, 'a la red unicamente', 'a la red unicamente', NULL, 1, 31, 31, '2026-02-23 18:11:22', '2026-02-23 18:11:22'),
+(2, 29, '2026-02-12', 4, '12:05:00', NULL, 'tuvo impacto en sucursal', 'tuvo impacto en sucursal', NULL, 1, 31, 31, '2026-02-23 18:18:26', '2026-02-23 18:18:26'),
+(3, 1, '2026-02-17', 4, '13:35:00', NULL, 'NO HUBO AFECTACION', 'TODO ESTA OK', 'SSSSSS', 1, 31, 31, '2026-02-23 19:52:18', '2026-02-23 19:52:18');
 
 -- --------------------------------------------------------
 
@@ -442,7 +466,12 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `id_area`, `description`,
 (75, 'microsoft.create', 'api', 4, 'Método que permite visualizar la sección para crear un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22'),
 (76, 'microsoft.edit', 'api', 4, 'Método que permite visualizar la sección para editar un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22'),
 (77, 'microsoft.delete', 'api', 4, 'Método que permite eliminar un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22'),
-(78, 'microsoft.show', 'api', 4, 'Método que permite visualizar los detalles de un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22');
+(78, 'microsoft.show', 'api', 4, 'Método que permite visualizar los detalles de un microsoft.', '2026-01-21 18:03:22', '2026-01-21 18:03:22'),
+(79, 'monit-aa.browse', 'api', 4, 'Método que permite navegar en la sección monit-aa.', '2026-02-23 03:53:02', '2026-02-23 03:53:02'),
+(80, 'monit-aa.create', 'api', 4, 'Método que permite visualizar la sección para crear un monit-aa.', '2026-02-23 03:53:02', '2026-02-23 03:53:02'),
+(81, 'monit-aa.edit', 'api', 4, 'Método que permite visualizar la sección para editar un monit-aa.', '2026-02-23 03:53:02', '2026-02-23 03:53:02'),
+(82, 'monit-aa.delete', 'api', 4, 'Método que permite eliminar un monit-aa.', '2026-02-23 03:53:02', '2026-02-23 03:53:02'),
+(83, 'monit-aa.show', 'api', 4, 'Método que permite visualizar los detalles de un monit-aa.', '2026-02-23 03:53:02', '2026-02-23 03:53:02');
 
 -- --------------------------------------------------------
 
@@ -613,15 +642,33 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (68, 9),
 (68, 11),
 (69, 4),
+(69, 16),
 (70, 4),
+(70, 16),
 (71, 4),
+(71, 16),
 (72, 4),
 (73, 4),
+(73, 16),
 (74, 4),
+(74, 16),
 (75, 4),
+(75, 16),
 (76, 4),
+(76, 16),
 (77, 4),
-(78, 4);
+(77, 16),
+(78, 4),
+(78, 16),
+(79, 4),
+(79, 16),
+(80, 4),
+(80, 16),
+(81, 4),
+(81, 16),
+(82, 4),
+(83, 4),
+(83, 16);
 
 -- --------------------------------------------------------
 
@@ -645,7 +692,7 @@ CREATE TABLE `sucursales` (
 --
 
 INSERT INTO `sucursales` (`id`, `nameS`, `servHost`, `plat`, `keys`, `ip`, `created_at`, `updated_at`) VALUES
-(1, 1, 'AP-Guadalajara-01', 1, NULL, '192.168.10.64', '2026-01-20 21:27:31', '2026-01-20 21:27:31'),
+(1, 2, 'AP-Guadalajara-01', 1, NULL, '192.168.10.64', '2026-01-20 21:27:31', '2026-02-23 18:27:14'),
 (2, 1, 'Ventas02', 1, NULL, '192.168.160.35', '2026-01-20 22:54:44', '2026-01-20 22:54:44'),
 (3, 2, 'AP-Guadalajara-04', 1, NULL, '192.168.10.54', '2026-01-20 23:14:03', '2026-01-20 23:14:03'),
 (4, 1, 'Cecap01', 1, NULL, '192.168.160.47', '2026-01-20 23:14:18', '2026-01-20 23:14:18'),
@@ -708,7 +755,8 @@ INSERT INTO `tickets` (`id`, `numTicket`, `numTicketNoct`, `user_create_ticket`,
 (6, 8495, 8710, 28, 26, '8495', 'Se abordara sesión el día viernes con el equipo de Veeam.', 1, NULL, '2026-02-12 15:26:04', '2026-02-12 15:26:04'),
 (8, 8611, NULL, 26, 30, 'Re: Por favor, díganos lo que piensa de nuestro servicio', 'Sesión dia lunes 9 pm.', 1, NULL, '2026-02-16 19:40:32', '2026-02-16 19:40:32'),
 (9, 8495, NULL, 27, 26, 'Validacion de Jobs', 'Se envia reporte el dia viernes, pendiente seguimiento a sobreescritura de puntos', 1, 50, '2026-02-16 19:40:34', '2026-02-16 19:40:34'),
-(10, 8343, NULL, 27, 26, 'Error de recuperación de maquinas Linux', 'Se envia logs al equipo de veeam, seguimiento a ticket', 1, 50, '2026-02-16 19:40:34', '2026-02-16 19:40:34');
+(10, 8343, NULL, 27, 26, 'Error de recuperación de maquinas Linux', 'Se envia logs al equipo de veeam, seguimiento a ticket', 1, 50, '2026-02-16 19:40:34', '2026-02-16 19:40:34'),
+(14, 85231, NULL, 19, 27, 'dashbopard', 'dfsfsdfdffsd', 1, NULL, '2026-02-17 16:41:28', '2026-02-25 23:45:21');
 
 -- --------------------------------------------------------
 
@@ -736,16 +784,17 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `area_id`, `email_verified_at`, `password`, `avatar`, `Activo`, `remember_token`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(12, 'Alfredo Villavicencio Luis', 'avillavicencio@teamnet.com.mx', NULL, NULL, '$2y$12$9oX8oCaZ0gpLtcoieL2FAOZ0kMBXhSAgVoCEEXhBP3AsLunvoOuSa', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/12-1767072008324.webp', 1, NULL, '2026-02-16 23:20:51', '2025-12-05 06:43:48', '2026-02-16 23:20:51'),
+(12, 'Alfredo Villavicencio Luis', 'avillavicencio@teamnet.com.mx', NULL, NULL, '$2y$12$9oX8oCaZ0gpLtcoieL2FAOZ0kMBXhSAgVoCEEXhBP3AsLunvoOuSa', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/12-1767072008324.webp', 1, NULL, '2026-02-27 05:34:26', '2025-12-05 06:43:48', '2026-02-27 05:34:26'),
 (16, 'Bernardo Jast', 'rolando.durgan@example.net', 4, '2025-12-05 22:10:14', '$2y$12$GeIP67KWH9oIQiAGgEk6zeLaNRA4YpIATdUHWj3FImhcsmMheJ4Rm', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, 'brfsLoHBaW', '2026-01-16 19:27:39', '2025-12-05 22:10:14', '2026-01-16 19:27:39'),
 (19, 'Alfredo Villavicencio No Admin', 'alfre1230999@gmail.com', 1, NULL, '$2y$12$O86jv0RpspWBBq/iq.YZMu2Anrb6WZhHBugXCAGHUPkb23z84ZEeq', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/19-1766204795492.webp', 1, NULL, '2025-12-26 20:30:22', '2025-12-13 04:03:40', '2026-01-02 18:53:34'),
 (23, 'Pruebas Lopez', 'prueba@pruebaLo.com', 4, NULL, '$2y$12$12w69BfzkFjS7C8Y0cLoeOTXK29zCSM/FfSjLufk8kd/K6gufIbeW', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:40:42', '2025-12-19 18:40:42'),
 (24, 'Pruebas Gomez', 'prueba@pruebaGo.com', 2, NULL, '$2y$12$HlUDy7GneveFbZM3Qk7HSew.t/ITgr8O0boM9u36bgb1fJL8AjAfK', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-19 18:41:37', '2025-12-19 19:10:40'),
 (26, 'Eduardo Flores Santiago', 'eduardo.flores@stratospherecorp.com', 1, NULL, '$2y$12$ZB.9fVCi7NCKkTIEjvFYaOT.YqPiS91Gyb8Iz6D9TAjxzL1J2uoz2', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/26-1769107169999.webp', 1, NULL, '2026-02-10 18:11:00', '2025-12-29 16:48:36', '2026-02-10 18:11:00'),
-(27, 'Dilan Martínez Escobedo', 'dilan.martinez@stratospherecorp.com', 1, NULL, '$2y$12$4/S1xrBd4SSalCv7u9jtCO1mU0x5oC54jE6ljQwNdvX33SwPy05jO', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, '2026-02-17 00:25:59', '2025-12-29 16:52:24', '2026-02-17 00:25:59'),
+(27, 'Dilan Martínez Escobedo', 'dilan.martinez@stratospherecorp.com', 1, NULL, '$2y$12$4/S1xrBd4SSalCv7u9jtCO1mU0x5oC54jE6ljQwNdvX33SwPy05jO', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, '2026-02-25 23:43:45', '2025-12-29 16:52:24', '2026-02-25 23:43:45'),
 (28, 'Miguel Rojas Romero', 'miguel.rojas@stratospherecorp.com', 1, NULL, '$2y$12$RRDgVk4HQEFOXL1/omNz8OppgK8Dr1OthScClCz9lwQgtgazPFm/e', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, '2025-12-30 18:25:24', '2025-12-30 04:09:51', '2025-12-30 18:25:24'),
 (29, 'Miguel Segundo Sebastián', 'miguel.segundo@stratospherecorp.com', 1, NULL, '$2y$12$3D7lhuU9YiYDHaI4NLS68.T84o2fm3XHXNJ604pGPFHkdBH9wmW6C', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2025-12-30 04:10:38', '2025-12-30 04:10:38'),
-(30, 'Josué Flores Ramírez', 'josue.flores@stratospherecorp.com', 1, NULL, '$2y$12$O0B3p.mqjhWckfwbPho.BueTVqa59p.npOaeNUi6UAgIEYorAm8ju', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2026-02-16 18:51:39', '2026-02-16 18:51:39');
+(30, 'Josué Flores Ramírez', 'josue.flores@stratospherecorp.com', 1, NULL, '$2y$12$O0B3p.mqjhWckfwbPho.BueTVqa59p.npOaeNUi6UAgIEYorAm8ju', 'https://fastrdjgttfnqkggxhmu.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, NULL, '2026-02-16 18:51:39', '2026-02-16 18:51:39'),
+(31, 'Ricardo Estrada Loza', 'restrada@teamnet.com.mx', 4, NULL, '$2y$12$L57ZDfsrym8Y6n10IM3MOeO.lm95i1PdaY6TW1khd38YhR.0JHcku', 'https://ztbplugqqtemidsmbmoy.supabase.co/storage/v1/object/public/Avatars/userdefault.jpg', 1, NULL, '2026-02-23 19:30:48', '2026-02-20 18:41:26', '2026-02-23 19:30:48');
 
 --
 -- Índices para tablas volcadas
@@ -789,6 +838,12 @@ ALTER TABLE `info_guard`
   ADD KEY `idx_info_guard_user_status_date` (`id_user`,`status`,`dateInit`);
 
 --
+-- Indices de la tabla `microsoft_m`
+--
+ALTER TABLE `microsoft_m`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `migrations`
 --
 ALTER TABLE `migrations`
@@ -820,6 +875,12 @@ ALTER TABLE `monitoreos`
   ADD KEY `idx_user_upd` (`user_Upd`),
   ADD KEY `idx_created_at` (`created_at`),
   ADD KEY `idx_client_site_dateRest` (`client_id`,`siteApp`,`dateRest`);
+
+--
+-- Indices de la tabla `monit_redes`
+--
+ALTER TABLE `monit_redes`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `password_reset_tokens`
@@ -917,25 +978,37 @@ ALTER TABLE `failed_jobs`
 -- AUTO_INCREMENT de la tabla `info_guard`
 --
 ALTER TABLE `info_guard`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=153;
+
+--
+-- AUTO_INCREMENT de la tabla `microsoft_m`
+--
+ALTER TABLE `microsoft_m`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT de la tabla `monitoreos`
 --
 ALTER TABLE `monitoreos`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `monit_redes`
+--
+ALTER TABLE `monit_redes`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
 
 --
 -- AUTO_INCREMENT de la tabla `personal_access_tokens`
@@ -959,13 +1032,13 @@ ALTER TABLE `sucursales`
 -- AUTO_INCREMENT de la tabla `tickets`
 --
 ALTER TABLE `tickets`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- Restricciones para tablas volcadas

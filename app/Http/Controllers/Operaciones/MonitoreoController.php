@@ -964,4 +964,112 @@ public function MonitGuardEdit(Request $request)
     }
 }
 
+public function MonitDash(Request $request)
+{
+    $user = $request->user();
+    if (! $user) {
+        return response()->json([
+            'message' => 'No autenticado. Envía tu token.',
+            'code'    => 'UNAUTHENTICATED',
+        ], 401);
+    }
+
+    $userId = (int) $user->id;
+
+    $startDay   = now()->startOfDay();
+    $endDay     = now()->endOfDay();
+    $startMonth = now()->startOfMonth();
+    $endMonth   = now()->endOfMonth();
+
+    // 1) ✅ Pendientes globales (sin importar quién lo creó)
+    $pendingAll = DB::table('monitoreos')
+        ->where('concluido', 1)
+        ->count();
+
+    // 2) ✅ Monitoreos del día resueltos por el usuario (hoy) => concluido=2 y user_Upd = userId, por updated_at
+    $doneTodayByUser = DB::table('monitoreos')
+        ->where('concluido', 2)
+        ->where('user_Upd', $userId)
+        ->whereBetween('updated_at', [$startDay, $endDay])
+        ->count();
+
+    // 3) ✅ Total del mes del usuario (TODO lo que creó el usuario, cualquier concluido)
+    $totalMonthByUser = DB::table('monitoreos')
+        ->where('user_Cre', $userId)
+        ->whereBetween('created_at', [$startMonth, $endMonth])
+        ->count();
+
+    // 4) ✅ Concluidos del mes por el usuario => concluido=2 y user_Upd = userId, por updated_at
+    $concludedMonthByUser = DB::table('monitoreos')
+        ->where('concluido', 2)
+        ->where('user_Upd', $userId)
+        ->whereBetween('updated_at', [$startMonth, $endMonth])
+        ->count();
+
+    // 5) ✅ Anulados del mes por el usuario => concluido=3 y user_Upd = userId, por updated_at
+    $annulledMonthByUser = DB::table('monitoreos')
+        ->where('concluido', 3)
+        ->where('user_Upd', $userId)
+        ->whereBetween('updated_at', [$startMonth, $endMonth])
+        ->count();
+
+    // ✅ Listado para tabla (pendientes globales)
+    $pendingMonitoreos = DB::table('monitoreos as m')
+        ->join('app_service as a', 'a.id', '=', 'm.siteApp')
+        ->leftJoin('c_veeam as cv', 'cv.id', '=', 'm.client_id')
+        ->select([
+            'm.id',
+            'm.client_id',
+            'm.siteApp',
+            'a.nameService as siteApp_name',
+            'cv.numCV as client_code',
+            'cv.nameCV as client_name',
+            'm.dateRest',
+            'm.estatus',
+            'm.observacion',
+            'm.concluido',
+            'm.created_at',
+            'm.updated_at',
+        ])
+        ->where('m.concluido', 1)
+        ->orderByDesc('m.created_at')
+        ->limit(50) // ajusta si quieres
+        ->get()
+        ->map(function ($r) {
+            $clientLabel = trim(($r->client_code ?? '') . ' - ' . ($r->client_name ?? ''));
+            if ($clientLabel === '-' || $clientLabel === '') $clientLabel = '—';
+
+            return [
+                'id'            => (int) $r->id,
+                'client_id'      => (int) $r->client_id,
+                'siteApp'        => (int) $r->siteApp,
+                'siteApp_name'   => $r->siteApp_name,
+                'client_label'   => $clientLabel,
+                'dateRest'       => $r->dateRest,
+                'estatus'        => (string) $r->estatus,
+                'observacion'    => $r->observacion,
+                'concluido'      => (int) $r->concluido,
+                'concluido_label'=> $this->statusMonit[(int) $r->concluido] ?? '—',
+                'created_at'     => $r->created_at,
+                'updated_at'     => $r->updated_at,
+            ];
+        })
+        ->values();
+
+    return response()->json([
+        'counts' => [
+            'pending_all'          => $pendingAll,
+            'done_today_user'      => $doneTodayByUser,
+            'total_month_user'     => $totalMonthByUser,
+            'concluded_month_user' => $concludedMonthByUser,
+            'annulled_month_user'  => $annulledMonthByUser,
+        ],
+        'pending_monitoreos' => $pendingMonitoreos,
+        'meta' => [
+            'today' => now()->toDateString(),
+            'month' => now()->format('Y-m'),
+        ],
+    ], 200);
+}
+
 }
