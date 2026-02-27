@@ -58,7 +58,7 @@ class CloseGuardia extends Command
                 $fresh->load('user:id,name,email');
 
                 // ✅ destino fijo (como pediste)
-                $to = 'avillavicencio@teamnet.com.mx';
+                $to = 'operationsstratosphere@stratospherecorp.com';
                 Mail::to($to)->send(new GuardiaAutoClosedMail($fresh));
             });
         }
