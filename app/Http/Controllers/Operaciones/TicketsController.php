@@ -214,7 +214,7 @@ class TicketsController extends Controller
 
 
 
-    public function store(Request $request)
+   public function store(Request $request)
 {
     $authUser   = $request->user();
     $authUserId = (int) $authUser->id;
@@ -227,12 +227,13 @@ class TicketsController extends Controller
         'numTicket' => [
             'required',
             'integer',
-            Rule::unique('tickets', 'numTicket'), // ✅ ÚNICO
+            Rule::unique('tickets', 'numTicket'),
         ],
-        'numTicketNoct'     => ['nullable', 'integer'], // ✅ SE PUEDE REPETIR
+        'numTicketNoct' => ['nullable', 'integer'],
 
+        // ✅ CAMBIO: ya no es required, ahora es opcional
         'assigned_user_id'  => [
-            'required',
+            'nullable',
             'integer',
             Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
         ],
@@ -252,6 +253,11 @@ class TicketsController extends Controller
         $creatorUserId = (int) $data['creator_user_id'];
     }
 
+    // ✅ NUEVO: si no mandan assigned_user_id, se asigna al authUser
+    $assignedUserId = !empty($data['assigned_user_id'])
+        ? (int) $data['assigned_user_id']
+        : $authUserId;
+
     $guardiaId = Guardias::where('id_user', $creatorUserId)
         ->where('status', 1)
         ->orderByDesc('dateInit')
@@ -261,7 +267,7 @@ class TicketsController extends Controller
         'numTicket'          => (int) $data['numTicket'],
         'numTicketNoct'      => $data['numTicketNoct'] !== null ? (int) $data['numTicketNoct'] : null,
         'user_create_ticket' => $creatorUserId,
-        'assigned_user_id'   => (int) $data['assigned_user_id'],
+        'assigned_user_id'   => $assignedUserId,
         'titleTicket'        => $data['titleTicket'],
         'descriptionTicket'  => $data['descriptionTicket'],
         'status'             => 1,
@@ -497,8 +503,6 @@ public function updateCloseTickets(Request $request)
                 'trace_id' => $traceId,
                 'auth_user_id' => $authUserId,
             ]);
-            // OJO: aquí puedes decidir si permitir actualizar tickets sin guardia activa.
-            // Si quieres permitirlo, elimina este abort.
             abort(422, 'No hay guardia activa.');
         }
 
@@ -533,34 +537,64 @@ public function updateCloseTickets(Request $request)
                     abort(404, "Ticket no encontrado: {$id}");
                 }
 
-                // ✅ autorización: NO-admin solo si assigned_user_id = él
-                if (! $isAdmin && (int) $ticket->assigned_user_id !== $authUserId) {
-                    abort(403, "No puedes editar el ticket {$id} (no está asignado a ti).");
+                // =========================================================
+                // ✅ AUTORIZACIÓN (según tu regla):
+                // - Admin: puede todo
+                // - No-admin:
+                //    - SI assigned_user_id en BD es NULL/0 => SÍ puede editar
+                //    - SI assigned_user_id en BD es él => SÍ puede editar
+                //    - SI assigned_user_id en BD es otro => NO puede editar
+                // =========================================================
+                if (! $isAdmin) {
+                    $currentAssigned = (int) ($ticket->assigned_user_id ?? 0);
+
+                    if ($currentAssigned !== 0 && $currentAssigned !== $authUserId) {
+                        abort(403, "No puedes editar el ticket {$id} (está asignado a otro usuario).");
+                    }
                 }
 
                 $nextStatus = (int) $row['status'];
+
+                // default: conservar lo que tenga
                 $nextAssignedUserId = (int) ($ticket->assigned_user_id ?? 0);
 
                 if ($isAdmin) {
+                    // Admin: si viene assigned_user_id, lo aplica, si no, conserva
                     if (! empty($row['assigned_user_id'])) {
                         $nextAssignedUserId = (int) $row['assigned_user_id'];
                     }
                 } else {
-                    // no-admin:
-                    // - si concluye -> se asigna a sí mismo
-                    // - si está activo -> NO puede reasignarse a sí mismo (tu regla)
+                    // =========================================================
+                    // ✅ NO-ADMIN:
+                    // - si concluye => se asigna a sí mismo
+                    // - si está activo:
+                    //    - si manda assigned_user_id:
+                    //        - si es él => permitido
+                    //        - si es otro => prohibido
+                    //    - si NO manda assigned_user_id:
+                    //        - si el ticket estaba libre (0) => auto-asignarlo a él
+                    //        - si ya era suyo => se queda como está
+                    // =========================================================
                     if ($nextStatus === 2) {
                         $nextAssignedUserId = $authUserId;
                     } else {
                         $candidate = ! empty($row['assigned_user_id'])
                             ? (int) $row['assigned_user_id']
-                            : (int) ($ticket->assigned_user_id ?? 0);
+                            : 0;
 
-                        if ($candidate === $authUserId) {
-                            abort(422, "Ticket {$id}: cuando está activo, no puedes reasignarte a ti mismo.");
+                        if ($candidate !== 0 && $candidate !== $authUserId) {
+                            abort(403, "Ticket {$id}: no puedes asignar el ticket a otro usuario.");
                         }
 
-                        $nextAssignedUserId = $candidate;
+                        if ($candidate === $authUserId) {
+                            // ✅ permitido asignarse a sí mismo estando activo
+                            $nextAssignedUserId = $authUserId;
+                        } else {
+                            // candidate == 0 (no mandó nada):
+                            // si está libre, lo tomas; si ya era tuyo, se conserva
+                            $currentAssigned = (int) ($ticket->assigned_user_id ?? 0);
+                            $nextAssignedUserId = $currentAssigned === 0 ? $authUserId : $currentAssigned;
+                        }
                     }
                 }
 
