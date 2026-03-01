@@ -53,7 +53,7 @@ class NotifyMissingGuardia extends Command
         }
 
         // Destino fijo
-        $to = 'avillavicencio@teamnet.com.mx';
+        $to = 'operationsstratosphere@stratospherecorp.com';
 
         Mail::to($to)->send(new GuardiaMissingMail($url));
 
