@@ -13,22 +13,22 @@ class NotifyMissingGuardia extends Command
 {
     protected $signature = 'guardias:notify-missing
                             {--cooldown=180}
-                            {--url=http://localhost:5173/inicio}';
+                            {--url=http://stratosphereoperations.com/inicio}';
 
-    protected $description = 'Si NO hay guardia activa, envía email para iniciar guardia (solo 18:00 a 09:00, cada 3h).';
+    protected $description = 'Si NO hay guardia activa, envía email para iniciar guardia (solo a las 08:00 y 21:00, con cooldown).';
 
     public function handle(): int
     {
-        // Ventana: 18:00 -> 09:00 (cruza medianoche)
-        if (! $this->isWithinWindow()) {
-            $this->info("🕒 Fuera de ventana (18:00-09:00). No se evalúa.");
+        // ✅ Solo ejecuta la lógica a las 08:00 AM y 09:00 PM
+        if (! $this->isAllowedTime()) {
+            $this->info("🕒 Fuera de horario permitido (08:00 / 21:00). No se evalúa.");
             return Command::SUCCESS;
         }
 
         $url = (string) $this->option('url');
         $cooldownMinutes = (int) $this->option('cooldown');
 
-        // ¿Hay guardia activa?
+        // ✅ ¿Hay guardia activa?
         $hasActive = Guardias::query()
             ->whereNull('dateFinish')
             ->where('status', 1)
@@ -39,7 +39,7 @@ class NotifyMissingGuardia extends Command
             return Command::SUCCESS;
         }
 
-        // Anti-spam: 1 aviso cada X minutos
+        // ✅ Anti-spam: 1 aviso cada X minutos
         $cacheKey = 'guardias:missing:cooldown';
 
         if (Cache::has($cacheKey)) {
@@ -52,7 +52,7 @@ class NotifyMissingGuardia extends Command
             Cache::put($cacheKey, true, now()->addMinutes($cooldownMinutes));
         }
 
-        // Destino fijo
+        // ✅ Destino fijo
         $to = 'operationsstratosphere@stratospherecorp.com';
 
         Mail::to($to)->send(new GuardiaMissingMail($url));
@@ -69,18 +69,12 @@ class NotifyMissingGuardia extends Command
         return Command::SUCCESS;
     }
 
-    private function isWithinWindow(): bool
+    private function isAllowedTime(): bool
     {
         // Usa timezone de Laravel (config/app.php)
-        $now = now();
-        $hour = (int) $now->format('H');
+        // Solo permitir exactamente 08:00 y 21:00
+        $hm = now()->format('H:i');
 
-        // 18:00 a 23:59  => hour >= 18
-        // 00:00 a 08:59  => hour < 9
-        // 09:00 exacto   => incluye 9:00? si quieres exacto a las 09:00, mejor validar por H:i.
-        // Para permitir envío a las 09:00 exacto con scheduler (que corre 09:00), usamos H:i:
-        $hm = $now->format('H:i');
-
-        return ($hm >= '18:00' && $hm <= '23:59') || ($hm >= '00:00' && $hm <= '09:00');
+        return $hm === '08:00' || $hm === '21:00';
     }
 }

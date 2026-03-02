@@ -3,28 +3,33 @@
 <head>
   <meta charset="utf-8">
 </head>
-<body style="font-family: Arial, sans-serif;">
-  <h2>⚠️ No hay guardia activa</h2>
+<body style="font-family: Arial, sans-serif; line-height:1.5; color:#111827;">
+  <h2 style="margin:0 0 12px 0; font-size:18px;">
+    Recordatorio del sistema: Guardia pendiente
+  </h2>
 
-  <p>
-    En este momento el sistema detectó que <strong>no existe una guardia activa</strong>.
+  <p style="margin:0 0 10px 0;">
+    Hola equipo.
   </p>
 
-  <p>
-    Por favor inicia una guardia desde el siguiente enlace:
+  <p style="margin:0 0 10px 0;">
+    El sistema detectó que actualmente no existe una guardia activa registrada.
   </p>
 
-  <p>
-    <a href="{{ $url }}" style="display:inline-block;padding:10px 14px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">
-      Iniciar guardia
+  <p style="margin:0 0 10px 0;">
+    Para continuar con la operación, ingresa al sistema desde este enlace:
+  </p>
+
+  <p style="margin:0 0 14px 0;">
+    <a href="{{ $url }}" style="color:#1d4ed8; text-decoration:underline;">
+      {{ $url }}
     </a>
   </p>
 
-  <p style="color:#666;font-size:12px;">
-    Si no puedes abrir el botón, copia y pega este link:<br>
-    {{ $url }}
-  </p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;">
 
-  <p>Saludos.</p>
+  <p style="margin:0; color:#6b7280; font-size:12px;">
+    Mensaje automático. Si ya se inició una guardia recientemente, puedes ignorar este aviso.
+  </p>
 </body>
 </html>
