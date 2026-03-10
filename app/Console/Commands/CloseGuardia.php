@@ -13,7 +13,7 @@ use App\Mail\GuardiaAutoClosedMail;
 class CloseGuardia extends Command
 {
     // ✅ por defecto 27 horas
-    protected $signature = 'guardias:close-expired {--hours=27} {--minutes=}';
+    protected $signature = 'guardias:close-expired {--hours=18} {--minutes=}';
     protected $description = 'Cierra guardias activas con más de X horas (o minutos) y envía email (cierre por sistema).';
 
     public function handle(): int

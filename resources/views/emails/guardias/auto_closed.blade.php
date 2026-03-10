@@ -9,7 +9,7 @@
   <p>Hola {{ $guardia->user?->name ?? 'Usuario' }},</p>
 
   <p>
-    Tu guardia fue cerrada automáticamente por el sistema después de 27 horas de ser abierta.
+    Tu guardia fue cerrada automáticamente por el sistema después de 18 horas de ser abierta.
   </p>
 
   <ul>
