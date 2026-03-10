@@ -100,7 +100,7 @@
     </div>
 
     <div class="footer">
-        © {{ date('Y') }} LARAVEL PRUEBAS — Todos los derechos reservados 2025.
+        © {{ date('Y') }} StratosphereOperations — Todos los derechos reservados 2025.
     </div>
 
 </div>
