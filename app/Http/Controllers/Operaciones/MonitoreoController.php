@@ -717,24 +717,49 @@ public function statusMonitoreo(int $id, Request $request)
     ], 200);
 }
 
-public function MonitGuardEdit(Request $request)
+public function MonitGuardEditFromGuardia(Request $request, int $id)
 {
     $authUser = $request->user();
-    if (!$authUser) {
+    if (! $authUser) {
         return response()->json([
             'message' => 'No autenticado. Envía tu token.',
-            'code' => 'UNAUTHENTICATED',
+            'code'    => 'UNAUTHENTICATED',
         ], 401);
     }
 
     $authUserId = (int) $authUser->id;
 
-    // ✅ IMPORTANTE: si este endpoint es SOLO para BD pendientes, exige id
+    $isAdmin = method_exists($authUser, 'isAdmin')
+        ? (bool) $authUser->isAdmin()
+        : $authUser->roles()->where('name', 'Administrador')->exists();
+
+    $guardia = Guardias::query()
+        ->with('user:id,name,email')
+        ->where('id', $id)
+        ->where('status', 1)
+        ->whereNull('dateFinish')
+        ->first();
+
+    if (! $guardia) {
+        return response()->json([
+            'message' => 'No se encontró una guardia activa válida.',
+        ], 404);
+    }
+
+    $guardiaOwnerId = (int) $guardia->id_user;
+    $isOwner = $guardiaOwnerId === $authUserId;
+
+    if (! $isAdmin && ! $isOwner) {
+        return response()->json([
+            'message' => 'No tienes permisos para actualizar monitoreos de esta guardia.',
+        ], 403);
+    }
+
     $validator = Validator::make($request->all(), [
         'site' => ['required', 'string', Rule::in(['veeam', 'site24', 'sophos'])],
         'rows' => ['required', 'array', 'min:1'],
 
-        // ✅ aquí SÍ debe venir id (porque son "pendientes BD")
+        // ✅ como son pendientes BD, aquí sí debe venir id
         'rows.*.id' => ['required', 'integer', 'min:1'],
 
         'rows.*.client_id'   => ['required', 'integer', 'min:1'],
@@ -743,13 +768,12 @@ public function MonitGuardEdit(Request $request)
         'rows.*.observacion' => ['nullable', 'string', 'max:5000'],
         'rows.*.dateRest'    => ['nullable', 'date_format:Y-m-d'],
 
-        'sync' => ['nullable', 'boolean'], // si no lo usas, déjalo pero no lo actives
+        'sync' => ['nullable', 'boolean'],
     ], [
         'rows.required' => 'No se recibieron registros.',
         'rows.*.dateRest.date_format' => 'dateRest debe venir en formato YYYY-MM-DD.',
     ]);
 
-    // ✅ validación avanzada por site
     $validator->after(function ($v) use ($request) {
         $site = (string) $request->input('site', '');
         $rows = (array) $request->input('rows', []);
@@ -780,21 +804,21 @@ public function MonitGuardEdit(Request $request)
                 $estatus  = trim((string) ($row['estatus'] ?? ''));
 
                 $realApp = (int) ($appsByClient[$clientId] ?? 0);
-                if (!$realApp) {
+
+                if (! $realApp) {
                     $v->errors()->add("rows.$i.client_id", 'Cliente Veeam no encontrado o sin app asignada.');
                     continue;
                 }
 
-                if (!in_array($realApp, $veeamAppIds, true)) {
+                if (! in_array($realApp, $veeamAppIds, true)) {
                     $v->errors()->add("rows.$i.client_id", 'El cliente tiene un app no válido para Veeam.');
                 }
 
-                if (!in_array($estatus, ['1','2','3','4','5','6'], true)) {
+                if (! in_array($estatus, ['1','2','3','4','5','6'], true)) {
                     $v->errors()->add("rows.$i.estatus", 'Estatus inválido para Veeam (solo 1..6).');
                 }
 
-                // si te mandan siteApp, debe coincidir
-                if (!empty($row['siteApp'])) {
+                if (! empty($row['siteApp'])) {
                     $sent = (int) $row['siteApp'];
                     if ($sent !== $realApp) {
                         $v->errors()->add("rows.$i.siteApp", 'siteApp enviado no coincide con el app real del cliente.');
@@ -805,7 +829,6 @@ public function MonitGuardEdit(Request $request)
             return;
         }
 
-        // otros sites: siteApp obligatorio
         foreach ($rows as $i => $row) {
             $siteApp = (int) ($row['siteApp'] ?? 0);
             if ($siteApp <= 0) {
@@ -825,20 +848,21 @@ public function MonitGuardEdit(Request $request)
     $rows = (array) $request->input('rows');
     $sync = (bool) $request->boolean('sync', false);
 
-    // ✅ LOG: entrada
-    Log::info('[MonitGuardEdit] incoming', [
-        'user_id' => $authUserId,
-        'site' => $site,
-        'rows_n' => count($rows),
-        'sync' => $sync,
-        'rows_sample' => array_slice($rows, 0, 3),
+    Log::info('[MonitGuardEditFromGuardia] incoming', [
+        'auth_user_id'        => $authUserId,
+        'auth_is_admin'       => $isAdmin,
+        'guardia_id'          => (int) $guardia->id,
+        'guardia_owner_id'    => $guardiaOwnerId,
+        'site'                => $site,
+        'rows_n'              => count($rows),
+        'sync'                => $sync,
+        'rows_sample'         => array_slice($rows, 0, 3),
     ]);
 
     try {
-        $result = DB::transaction(function () use ($rows, $site, $authUserId, $sync) {
+        $result = DB::transaction(function () use ($rows, $site, $guardia, $guardiaOwnerId, $sync) {
             $now = now();
 
-            // ✅ apps por cliente para veeam (derivamos siteApp real)
             $appsByClient = [];
             if ($site === 'veeam') {
                 $clientIds = collect($rows)
@@ -865,9 +889,6 @@ public function MonitGuardEdit(Request $request)
                 $estatus  = trim((string) ($r['estatus'] ?? ''));
                 $clientId = (int) ($r['client_id'] ?? 0);
 
-                // ✅ Regla concluido:
-                // 1-2 => concluido = 2
-                // 3-6 => concluido = 1
                 $concluido = in_array($estatus, ['1','2'], true) ? 2 : 1;
 
                 $siteApp = $site === 'veeam'
@@ -881,12 +902,14 @@ public function MonitGuardEdit(Request $request)
                     'estatus'     => $estatus,
                     'observacion' => $r['observacion'] ?? null,
                     'concluido'   => $concluido,
-                    'user_Upd'    => $authUserId,
+
+                    // ✅ REGLA DE GUARDIA
+                    'id_guard'    => (int) $guardia->id,
+                    'user_Upd'    => $guardiaOwnerId,
+
                     'updated_at'  => $now,
                 ];
 
-                // ✅ UPDATE GLOBAL POR ID (sin guardia)
-                // ✅ OPCIONAL: solo actualiza si aún está pendiente (concluido=1)
                 $q = Monitoreos::query()
                     ->where('id', $id)
                     ->where('concluido', 1);
@@ -896,70 +919,84 @@ public function MonitGuardEdit(Request $request)
                 if ($affected > 0) {
                     $updated += $affected;
                 } else {
-                    // puede ser: no existe, o ya no estaba pendiente
-                    // diferenciamos rápido:
                     $exists = Monitoreos::query()->where('id', $id)->exists();
-                    if (!$exists) {
+
+                    if (! $exists) {
                         $notFoundIds[] = $id;
-                        Log::warning('[MonitGuardEdit] update_no_rows_not_found', [
-                            'idx' => $idx, 'id' => $id, 'client_id' => $clientId, 'estatus' => $estatus, 'siteApp' => $siteApp,
+
+                        Log::warning('[MonitGuardEditFromGuardia] update_no_rows_not_found', [
+                            'idx'       => $idx,
+                            'id'        => $id,
+                            'client_id' => $clientId,
+                            'estatus'   => $estatus,
+                            'siteApp'   => $siteApp,
                         ]);
                     } else {
                         $skippedNotPending++;
-                        Log::info('[MonitGuardEdit] update_skip_not_pending', [
-                            'idx' => $idx, 'id' => $id, 'client_id' => $clientId, 'estatus' => $estatus,
+
+                        Log::info('[MonitGuardEditFromGuardia] update_skip_not_pending', [
+                            'idx'       => $idx,
+                            'id'        => $id,
+                            'client_id' => $clientId,
+                            'estatus'   => $estatus,
                         ]);
                     }
                 }
             }
 
-            // 🔸 Sync: si realmente lo quieres, hay que definir “scope” sin guardia.
-            // Por seguridad, yo lo dejaría apagado (sync=false siempre) hasta definir la regla.
             $deleted = 0;
             if ($sync) {
-                // ⚠️ NO recomendado sin scope claro
-                // $deleted = ...
+                // ⚠️ mantener apagado hasta definir alcance exacto
             }
 
             return [
-                'updated_n' => $updated,
-                'not_found_ids' => $notFoundIds,
+                'updated_n'             => $updated,
+                'not_found_ids'         => $notFoundIds,
                 'skipped_not_pending_n' => $skippedNotPending,
-                'deleted_n' => $deleted,
+                'deleted_n'             => $deleted,
             ];
         });
 
-        Log::info('[MonitGuardEdit] tx_result', [
-            'user_id' => $authUserId,
-            'site' => $site,
-            'rows_received' => count($rows),
-            ...$result,
-            'sync' => $sync,
+        Log::info('[MonitGuardEditFromGuardia] tx_result', [
+            'auth_user_id'           => $authUserId,
+            'guardia_id'             => (int) $guardia->id,
+            'guardia_owner_id'       => $guardiaOwnerId,
+            'site'                   => $site,
+            'rows_received'          => count($rows),
+            'updated_n'              => $result['updated_n'],
+            'not_found_ids'          => $result['not_found_ids'],
+            'skipped_not_pending_n'  => $result['skipped_not_pending_n'],
+            'deleted_n'              => $result['deleted_n'],
+            'sync'                   => $sync,
         ]);
 
         return response()->json([
-            'message' => 'Monitoreos pendientes actualizados correctamente.',
-            'count' => count($rows),
-            'updated' => $result['updated_n'],
+            'message'          => 'Monitoreos pendientes actualizados correctamente.',
+            'count'            => count($rows),
+            'updated'          => $result['updated_n'],
             'skipped_not_pending' => $result['skipped_not_pending_n'],
-            'not_found_ids' => $result['not_found_ids'],
-            'sync' => $sync,
+            'not_found_ids'    => $result['not_found_ids'],
+            'guardia_id'       => (int) $guardia->id,
+            'guardia_owner_id' => $guardiaOwnerId,
+            'sync'             => $sync,
         ], 200);
 
     } catch (Throwable $e) {
-        Log::error('Monitoreo MonitGuardEdit failed', [
-            'error' => $e->getMessage(),
-            'file'  => $e->getFile(),
-            'line'  => $e->getLine(),
-            'rows_count' => count($rows),
-            'user_id' => $authUserId,
-            'site' => $site,
+        Log::error('MonitGuardEditFromGuardia failed', [
+            'error'            => $e->getMessage(),
+            'file'             => $e->getFile(),
+            'line'             => $e->getLine(),
+            'rows_count'       => count($rows),
+            'auth_user_id'     => $authUserId,
+            'guardia_id'       => (int) $guardia->id,
+            'guardia_owner_id' => $guardiaOwnerId,
+            'site'             => $site,
         ]);
 
         return response()->json([
-            'message' => 'Error al actualizar monitoreos.',
-            'code' => 'SERVER_ERROR',
-            'debug' => config('app.debug') ? $e->getMessage() : null,
+            'message' => 'Error al actualizar monitoreos de la guardia.',
+            'code'    => 'SERVER_ERROR',
+            'debug'   => config('app.debug') ? $e->getMessage() : null,
         ], 500);
     }
 }

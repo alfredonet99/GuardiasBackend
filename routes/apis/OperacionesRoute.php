@@ -32,9 +32,11 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('/guardias',[GuardiasController::class,'index']);
         Route::post("/guardias/store",[GuardiasController::class, 'store']);
         Route::get('/guardias/active', [GuardiasController::class, 'active']);
+        Route::get('/guardias/{id}/edit',[GuardiasController::class,'editContext']);
         Route::get('/guardias/close', [GuardiasController::class, 'closeData']);
         Route::post('/guardias/close/data', [GuardiasController::class, 'closeFinal']);
-
+        Route::post('/guardias/tickets/{id}', [GuardiasController::class,'storeTicketFromGuardia']);
+        Route::post('/guardias/monitoreos/{id}', [GuardiasController::class,'storeMonitoreosFromGuardia']);
 
         Route::get('/tickets',[TicketsController::class,'index']);
         Route::post('/tickets/crear',[TicketsController::class,'store']);
@@ -55,6 +57,6 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('/monitoreos/{id}/show',[MonitoreoController::class,'show']);
         Route::patch('/monitoreos/{id}/status',[MonitoreoController::class,'statusMonitoreo']);
         Route::get('/monitoreos/pendientes/veeam',[MonitoreoController::class,'pendientesVeeam']);
-        Route::patch('/monitoreos/close/guard',[MonitoreoController::class,'MonitGuardEdit']);
+        Route::patch('/monitoreos/close/guard/{id}',[MonitoreoController::class,'MonitGuardEditFromGuardia']);
         Route::get('/monitoreos/dashboard',[MonitoreoController::class,'MonitDash']);
     });

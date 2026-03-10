@@ -29,16 +29,15 @@ class TicketsController extends Controller
             3 => 'Anulado',
         ];
     }
-    public function index(Request $request)
+   public function index(Request $request)
 {
     $user    = $request->user();
     $search  = trim((string) $request->query('search', ''));
-    $status  = trim((string) $request->query('status', '')); // ✅ NUEVO
+    $status  = trim((string) $request->query('status', ''));
     $perPage = 20;
 
-    $canSeeAll = $user?->roles()
-        ->whereIn('name', ['Administrador', 'Service Support Cloud Coordinator'])
-        ->exists();
+    // ✅ Ahora todos pueden ver todos los tickets
+    $canSeeAll = true;
 
     $months = [
         'enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5,
@@ -54,18 +53,9 @@ class TicketsController extends Controller
     ];
 
     $query = Tickets::query()
-        ->with(['creator', 'assignedUser'])
-        ->when(! $canSeeAll, function ($q) use ($user) {
-            $uid = (int) $user->id;
+        ->with(['creator', 'assignedUser']);
 
-            $q->where(function ($qq) use ($uid) {
-                $qq->where('user_create_ticket', $uid)
-                   ->orWhere('assigned_user_id', $uid);
-            });
-        });
-
-    // ✅ FILTRO POR STATUS (select)
-    // si viene "1", "2" o "3" aplicamos where. Si viene "", no filtramos.
+    // ✅ FILTRO POR STATUS
     if ($status !== '' && ctype_digit($status)) {
         $st = (int) $status;
         if (in_array($st, [1, 2, 3], true)) {
@@ -190,9 +180,10 @@ class TicketsController extends Controller
     }
 
     $tickets = $query
-        ->orderByDesc('created_at')
-        ->paginate($perPage)
-        ->withQueryString();
+    ->orderByDesc('updated_at')
+    ->orderByDesc('created_at')
+    ->paginate($perPage)
+    ->withQueryString();
 
     return response()->json([
         'tickets'      => $tickets,
@@ -214,7 +205,7 @@ class TicketsController extends Controller
 
 
 
-   public function store(Request $request)
+ public function store(Request $request)
 {
     $authUser   = $request->user();
     $authUserId = (int) $authUser->id;
@@ -230,36 +221,33 @@ class TicketsController extends Controller
             Rule::unique('tickets', 'numTicket'),
         ],
         'numTicketNoct' => ['nullable', 'integer'],
-
-        // ✅ CAMBIO: ya no es required, ahora es opcional
-        'assigned_user_id'  => [
-            'nullable',
-            'integer',
-            Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
-        ],
-
-        'titleTicket'       => ['required', 'string', 'max:100'],
+        'titleTicket' => ['required', 'string', 'max:100'],
         'descriptionTicket' => ['required', 'string', 'max:2000'],
-
-        'creator_user_id'   => [
+        'creator_user_id' => [
             'nullable',
             'integer',
             Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
         ],
     ]);
 
+    // ✅ CREADOR DEL TICKET
+    // Usuario normal: siempre él mismo
+    // Admin: puede decidir otro creador
     $creatorUserId = $authUserId;
     if ($isAdmin && !empty($data['creator_user_id'])) {
         $creatorUserId = (int) $data['creator_user_id'];
     }
 
-    // ✅ NUEVO: si no mandan assigned_user_id, se asigna al authUser
-    $assignedUserId = !empty($data['assigned_user_id'])
-        ? (int) $data['assigned_user_id']
-        : $authUserId;
+    // ✅ USUARIO ASIGNADO
+    // Al crear, debe quedar igual al usuario seleccionado como creador
+    $assignedUserId = $creatorUserId;
 
-    $guardiaId = Guardias::where('id_user', $creatorUserId)
+    // ✅ GUARDIA
+    // Se toma del mismo usuario seleccionado como creador/asignado
+    $guardiaId = Guardias::query()
+        ->where('id_user', $creatorUserId)
         ->where('status', 1)
+        ->whereNull('dateFinish')
         ->orderByDesc('dateInit')
         ->value('id');
 
@@ -285,61 +273,34 @@ class TicketsController extends Controller
 }
 
    public function edit(string $id, Request $request)
-    {
-        $user = $request->user();
-        $uid  = (int) $user->id;
+{
+    $ticket = Tickets::query()
+        ->with(['creator', 'assignedUser'])
+        ->whereKey($id)
+        ->first();
 
-        $canEditAll = $user->roles()
-            ->whereIn('name', ['Administrador', 'Service Support Cloud Coordinator'])
-            ->exists();
-
-        // 1) Primero: existe?
-        $ticket = Tickets::query()
-            ->with(['creator', 'assignedUser'])
-            ->whereKey($id)
-            ->first();
-
-        if (! $ticket) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ticket no encontrado.',
-            ], 404);
-        }
-
-        // 2) Luego: permiso
-        if (! $canEditAll) {
-            $isOwnerOrAssigned =
-                ((int) $ticket->user_create_ticket === $uid) ||
-                ((int) $ticket->assigned_user_id === $uid);
-
-            if (! $isOwnerOrAssigned) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No tienes permisos para acceder a este ticket.',
-                ], 403);
-            }
-        }
-
+    if (! $ticket) {
         return response()->json([
-            'success' => true,
-            'ticket'  => $ticket,
-        ]);
+            'success' => false,
+            'message' => 'Ticket no encontrado.',
+        ], 404);
     }
 
+    return response()->json([
+        'success' => true,
+        'ticket'  => $ticket,
+    ]);
+}
 
 
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+public function update(Request $request, string $id)
 {
     $user = $request->user();
     $uid  = (int) $user->id;
-
-    $canEditAll = $user->roles()
-        ->whereIn('name', ['Administrador', 'Service Support Cloud Coordinator'])
-        ->exists();
 
     $ticket = Tickets::query()
         ->with(['creator', 'assignedUser'])
@@ -353,56 +314,22 @@ class TicketsController extends Controller
         ], 404);
     }
 
-    // permisos (igual que edit)
-    if (! $canEditAll) {
-        $isOwnerOrAssigned =
-            ((int) $ticket->user_create_ticket === $uid) ||
-            ((int) $ticket->assigned_user_id === $uid);
-
-        if (! $isOwnerOrAssigned) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permisos para actualizar este ticket.',
-            ], 403);
-        }
-    }
-
     $data = $request->validate([
         'numTicket' => ['sometimes', 'required', 'integer'],
         'numTicketNoct' => ['sometimes', 'nullable', 'integer'],
-
-        'assigned_user_id' => [
-            'sometimes',
-            'required',
-            'integer',
-            Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
-        ],
-
         'titleTicket' => ['sometimes', 'required', 'string', 'max:100'],
         'descriptionTicket' => ['sometimes', 'required', 'string', 'max:2000'],
-
-        // solo Admin/SSC lo puede cambiar (si no, lo ignoramos)
-        'creator_user_id' => [
-            'sometimes',
-            'nullable',
-            'integer',
-            Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
-        ],
-
         'status' => ['sometimes', 'required', 'integer', Rule::in([1, 2, 3])],
     ]);
 
-    // aplicar cambios SOLO si vienen
     if (array_key_exists('numTicket', $data)) {
         $ticket->numTicket = (int) $data['numTicket'];
     }
 
     if (array_key_exists('numTicketNoct', $data)) {
-        $ticket->numTicketNoct = $data['numTicketNoct'] !== null ? (int) $data['numTicketNoct'] : null;
-    }
-
-    if (array_key_exists('assigned_user_id', $data)) {
-        $ticket->assigned_user_id = (int) $data['assigned_user_id'];
+        $ticket->numTicketNoct = $data['numTicketNoct'] !== null
+            ? (int) $data['numTicketNoct']
+            : null;
     }
 
     if (array_key_exists('titleTicket', $data)) {
@@ -417,9 +344,20 @@ class TicketsController extends Controller
         $ticket->status = (int) $data['status'];
     }
 
-    // creator solo si Admin/SSC y viene en request con valor
-    if ($canEditAll && array_key_exists('creator_user_id', $data) && !empty($data['creator_user_id'])) {
-        $ticket->user_create_ticket = (int) $data['creator_user_id'];
+    // ✅ Siempre se reasigna al usuario que está modificando
+    $ticket->assigned_user_id = $uid;
+
+    // ✅ Buscar guardia activa del usuario que está modificando
+    $activeGuardiaId = Guardias::query()
+        ->where('id_user', $uid)
+        ->where('status', 1)
+        ->whereNull('dateFinish')
+        ->orderByDesc('dateInit')
+        ->value('id');
+
+    // ✅ Si existe guardia activa, se actualiza en el ticket
+    if ($activeGuardiaId) {
+        $ticket->id_guardia = (int) $activeGuardiaId;
     }
 
     $ticket->save();
@@ -428,10 +366,13 @@ class TicketsController extends Controller
     return response()->json([
         'success' => true,
         'ticket'  => $ticket,
-        'message' => 'Ticket actualizado correctamente.',
+        'guardia_detectada' => (bool) $activeGuardiaId,
+        'guardia_id' => $activeGuardiaId,
+        'message' => $activeGuardiaId
+            ? 'Ticket actualizado correctamente (guardia activa detectada).'
+            : 'Ticket actualizado correctamente (sin guardia activa).',
     ], 200);
 }
-
 public function updateCloseTickets(Request $request)
 {
     $traceId = (string) Str::uuid();
@@ -465,55 +406,72 @@ public function updateCloseTickets(Request $request)
 
         Log::info('[updateCloseTickets] Incoming payload summary', [
             'trace_id' => $traceId,
+            'guardia_id' => $request->input('guardia_id'),
             'tickets_count' => is_array($request->input('tickets')) ? count($request->input('tickets')) : null,
             'first_ticket' => $request->input('tickets.0'),
         ]);
 
         $data = $request->validate([
-            'tickets' => ['required', 'array', 'min:1'],
+            'guardia_id' => ['required', 'integer', Rule::exists('info_guard', 'id')],
 
+            'tickets' => ['required', 'array', 'min:1'],
             'tickets.*.id' => ['required', 'integer', Rule::exists('tickets', 'id')],
             'tickets.*.numTicket' => ['required', 'integer'],
             'tickets.*.numTicketNoct' => ['nullable', 'integer'],
             'tickets.*.titleTicket' => ['required', 'string', 'max:100'],
             'tickets.*.descriptionTicket' => ['required', 'string', 'max:2000'],
             'tickets.*.status' => ['required', 'integer', Rule::in([1, 2])],
-            'tickets.*.assigned_user_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'id')->where(fn ($q) => $q->where('Activo', 1)),
-            ],
         ]);
 
-        // guardia activa del auth (para linkear tickets si aplica)
-        $activeGuardiaId = Guardias::query()
-            ->where('id_user', $authUserId)
+        $guardia = Guardias::query()
+            ->where('id', (int) $data['guardia_id'])
             ->where('status', 1)
             ->whereNull('dateFinish')
-            ->orderByDesc('dateInit')
-            ->value('id');
+            ->first();
 
-        Log::info('[updateCloseTickets] Active guardia lookup', [
+        Log::info('[updateCloseTickets] Target guardia lookup', [
             'trace_id' => $traceId,
-            'active_guardia_id' => $activeGuardiaId,
+            'guardia_id' => (int) ($data['guardia_id'] ?? 0),
+            'guardia_found' => (bool) $guardia,
         ]);
 
-        if (! $activeGuardiaId) {
-            Log::warning('[updateCloseTickets] No hay guardia activa (solo update tickets)', [
+        if (! $guardia) {
+            Log::warning('[updateCloseTickets] No hay guardia activa objetivo', [
                 'trace_id' => $traceId,
-                'auth_user_id' => $authUserId,
+                'requested_guardia_id' => (int) ($data['guardia_id'] ?? 0),
             ]);
-            abort(422, 'No hay guardia activa.');
+
+            abort(422, 'No hay guardia activa para procesar.');
         }
 
-        return DB::transaction(function () use ($data, $authUserId, $isAdmin, $activeGuardiaId, $traceId) {
+        $guardiaId = (int) $guardia->id;
+        $guardiaOwnerUserId = (int) $guardia->id_user;
 
-            Log::info('[updateCloseTickets] TX START', [
+        // ✅ Permiso sobre la guardia objetivo
+        if (! $isAdmin && $guardiaOwnerUserId !== $authUserId) {
+            Log::warning('[updateCloseTickets] Intento no autorizado sobre guardia ajena', [
                 'trace_id' => $traceId,
-                'guardia_id' => $activeGuardiaId,
+                'auth_user_id' => $authUserId,
+                'guardia_id' => $guardiaId,
+                'guardia_owner_user_id' => $guardiaOwnerUserId,
             ]);
 
-            $ids = collect($data['tickets'])->pluck('id')->map(fn ($v) => (int) $v)->all();
+            abort(403, 'No puedes actualizar tickets de una guardia que no te pertenece.');
+        }
+
+        return DB::transaction(function () use ($data, $traceId, $guardiaId, $guardiaOwnerUserId, $authUserId, $isAdmin) {
+            Log::info('[updateCloseTickets] TX START', [
+                'trace_id' => $traceId,
+                'guardia_id' => $guardiaId,
+                'guardia_owner_user_id' => $guardiaOwnerUserId,
+                'closed_by_user_id' => $authUserId,
+                'closed_by_is_admin' => $isAdmin,
+            ]);
+
+            $ids = collect($data['tickets'])
+                ->pluck('id')
+                ->map(fn ($v) => (int) $v)
+                ->all();
 
             $ticketsDb = Tickets::query()
                 ->whereIn('id', $ids)
@@ -537,90 +495,39 @@ public function updateCloseTickets(Request $request)
                     abort(404, "Ticket no encontrado: {$id}");
                 }
 
-                // =========================================================
-                // ✅ AUTORIZACIÓN (según tu regla):
-                // - Admin: puede todo
-                // - No-admin:
-                //    - SI assigned_user_id en BD es NULL/0 => SÍ puede editar
-                //    - SI assigned_user_id en BD es él => SÍ puede editar
-                //    - SI assigned_user_id en BD es otro => NO puede editar
-                // =========================================================
-                if (! $isAdmin) {
-                    $currentAssigned = (int) ($ticket->assigned_user_id ?? 0);
-
-                    if ($currentAssigned !== 0 && $currentAssigned !== $authUserId) {
-                        abort(403, "No puedes editar el ticket {$id} (está asignado a otro usuario).");
-                    }
-                }
-
                 $nextStatus = (int) $row['status'];
 
-                // default: conservar lo que tenga
-                $nextAssignedUserId = (int) ($ticket->assigned_user_id ?? 0);
-
-                if ($isAdmin) {
-                    // Admin: si viene assigned_user_id, lo aplica, si no, conserva
-                    if (! empty($row['assigned_user_id'])) {
-                        $nextAssignedUserId = (int) $row['assigned_user_id'];
-                    }
-                } else {
-                    // =========================================================
-                    // ✅ NO-ADMIN:
-                    // - si concluye => se asigna a sí mismo
-                    // - si está activo:
-                    //    - si manda assigned_user_id:
-                    //        - si es él => permitido
-                    //        - si es otro => prohibido
-                    //    - si NO manda assigned_user_id:
-                    //        - si el ticket estaba libre (0) => auto-asignarlo a él
-                    //        - si ya era suyo => se queda como está
-                    // =========================================================
-                    if ($nextStatus === 2) {
-                        $nextAssignedUserId = $authUserId;
-                    } else {
-                        $candidate = ! empty($row['assigned_user_id'])
-                            ? (int) $row['assigned_user_id']
-                            : 0;
-
-                        if ($candidate !== 0 && $candidate !== $authUserId) {
-                            abort(403, "Ticket {$id}: no puedes asignar el ticket a otro usuario.");
-                        }
-
-                        if ($candidate === $authUserId) {
-                            // ✅ permitido asignarse a sí mismo estando activo
-                            $nextAssignedUserId = $authUserId;
-                        } else {
-                            // candidate == 0 (no mandó nada):
-                            // si está libre, lo tomas; si ya era tuyo, se conserva
-                            $currentAssigned = (int) ($ticket->assigned_user_id ?? 0);
-                            $nextAssignedUserId = $currentAssigned === 0 ? $authUserId : $currentAssigned;
-                        }
-                    }
-                }
-
                 $ticket->numTicket = (int) $row['numTicket'];
-                $ticket->numTicketNoct = $row['numTicketNoct'] !== null ? (int) $row['numTicketNoct'] : null;
+                $ticket->numTicketNoct = $row['numTicketNoct'] !== null
+                    ? (int) $row['numTicketNoct']
+                    : null;
                 $ticket->titleTicket = $row['titleTicket'];
                 $ticket->descriptionTicket = $row['descriptionTicket'];
                 $ticket->status = $nextStatus;
-                $ticket->assigned_user_id = $nextAssignedUserId;
 
-                // ✅ liga a guardia activa del usuario que está cerrando
-                $ticket->id_guardia = (int) $activeGuardiaId;
+                // ✅ Backend decide el asignado:
+                // siempre queda con el usuario dueño de la guardia
+                $ticket->assigned_user_id = $guardiaOwnerUserId;
+
+                // ✅ Liga los tickets a la guardia objetivo real
+                $ticket->id_guardia = $guardiaId;
 
                 $ticket->save();
                 $updatedIds[] = $ticket->id;
             }
 
             $ticketsToSend = Tickets::query()
-                ->where('id_guardia', $activeGuardiaId)
+                ->where('id_guardia', $guardiaId)
                 ->with(['creator:id,name,email', 'assignedUser:id,name,email'])
                 ->orderBy('id')
                 ->get();
 
             Log::info('[updateCloseTickets] TX OK', [
                 'trace_id' => $traceId,
-                'guardia_id' => (int) $activeGuardiaId,
+                'guardia_id' => $guardiaId,
+                'guardia_owner_user_id' => $guardiaOwnerUserId,
+                'closed_by_user_id' => $authUserId,
+                'closed_by_is_admin' => $isAdmin,
                 'updated_ticket_ids' => $updatedIds,
                 'tickets_to_send_count' => $ticketsToSend->count(),
             ]);
@@ -628,7 +535,8 @@ public function updateCloseTickets(Request $request)
             return response()->json([
                 'trace_id' => $traceId,
                 'message' => 'Tickets actualizados correctamente.',
-                'guardia_id' => (int) $activeGuardiaId,
+                'guardia_id' => $guardiaId,
+                'guardia_owner_user_id' => $guardiaOwnerUserId,
                 'updated_ticket_ids' => $updatedIds,
                 'tickets' => $ticketsToSend,
             ]);

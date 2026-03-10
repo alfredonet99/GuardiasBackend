@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Operaciones;
 
 use App\Http\Controllers\Controller;
 use App\Models\Operaciones\Tickets;
+use App\Models\Operaciones\Monitoreos;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Operaciones\ClienteVeeam;
 use Illuminate\Http\Request;
 use App\Models\Operaciones\Guardias;
 use Illuminate\Support\Str;
@@ -237,18 +240,42 @@ class GuardiasController extends Controller
         ]);
     }
 
-   public function closeData(Request $request)
-{
-    $user = $request->user();
-    if (! $user) abort(401, 'No autenticado.');
 
-    $guardia = Guardias::where('id_user', $user->id)
+
+
+    public function editContext(Request $request, int $id)
+{
+    $authUser = $request->user();
+    if (! $authUser) {
+        abort(401, 'No autenticado.');
+    }
+
+    $isAdmin = method_exists($authUser, 'isAdmin')
+        ? (bool) $authUser->isAdmin()
+        : $authUser->roles()->where('name', 'Administrador')->exists();
+
+    $guardia = Guardias::with('user:id,name,email')
+        ->where('id', $id)
         ->where('status', 1)
         ->whereNull('dateFinish')
-        ->latest('dateInit')
         ->first();
 
-    // ✅ SOLO tickets asignados al usuario Y abiertos (no concluidos)
+    if (! $guardia) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No hay una guardia activa para editar.',
+        ], 404);
+    }
+
+    $isOwner = (int) $guardia->id_user === (int) $authUser->id;
+
+    if (! $isAdmin && ! $isOwner) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No tienes permisos para editar esta guardia.',
+        ], 403);
+    }
+
     $tickets = Tickets::query()
         ->select([
             'id',
@@ -268,20 +295,95 @@ class GuardiasController extends Controller
             'assignedUser:id,name,email',
             'guardia:id,id_user,dateInit,dateFinish,status',
         ])
-        ->where('assigned_user_id', $user->id)
-        ->where('status', '!=', 2) // ✅ abiertos
+        ->where('status', 1)
+        ->orderByDesc('updated_at')
         ->orderByDesc('created_at')
         ->get();
 
     return response()->json([
-        'hasActive' => (bool) $guardia,
-        'guardia'   => $guardia?->load('user:id,name,email'),
+        'success' => true,
+        'guardia' => $guardia,
+        'tickets' => $tickets,
+        'statusMap' => $this->statusMap,
+        'auth' => [
+            'id' => (int) $authUser->id,
+            'name' => $authUser->name,
+            'is_admin' => $isAdmin,
+            'is_owner' => $isOwner,
+        ],
+    ]);
+}
+
+public function closeData(Request $request)
+{
+    $authUser = $request->user();
+    if (! $authUser) {
+        abort(401, 'No autenticado.');
+    }
+
+    $isAdmin = method_exists($authUser, 'isAdmin')
+        ? (bool) $authUser->isAdmin()
+        : $authUser->roles()->where('name', 'Administrador')->exists();
+
+    $data = $request->validate([
+        'guardia_id' => ['required', 'integer', Rule::exists('info_guard', 'id')],
+    ]);
+
+    $guardia = Guardias::with('user:id,name,email')
+        ->where('id', (int) $data['guardia_id'])
+        ->where('status', 1)
+        ->whereNull('dateFinish')
+        ->first();
+
+    if (! $guardia) {
+        return response()->json([
+            'hasActive' => false,
+            'guardia'   => null,
+            'tickets'   => [],
+            'statusMap' => $this->statusMap,
+            'message'   => 'No hay guardia activa para mostrar.',
+        ], 200);
+    }
+
+    // ✅ Si no es admin, solo puede consultar su propia guardia
+    if (! $isAdmin && (int) $guardia->id_user !== (int) $authUser->id) {
+        return response()->json([
+            'message' => 'No puedes consultar una guardia que no te pertenece.',
+        ], 403);
+    }
+
+    // ✅ TODOS los tickets abiertos del sistema
+    $tickets = Tickets::query()
+        ->select([
+            'id',
+            'numTicket',
+            'numTicketNoct',
+            'user_create_ticket',
+            'assigned_user_id',
+            'titleTicket',
+            'descriptionTicket',
+            'status',
+            'id_guardia',
+            'created_at',
+            'updated_at',
+        ])
+        ->with([
+            'creator:id,name,email',
+            'assignedUser:id,name,email',
+            'guardia:id,id_user,dateInit,dateFinish,status',
+        ])
+        ->where('status', 1)
+        ->orderByDesc('updated_at')
+        ->orderByDesc('created_at')
+        ->get();
+
+    return response()->json([
+        'hasActive' => true,
+        'guardia'   => $guardia,
         'tickets'   => $tickets,
         'statusMap' => $this->statusMap,
     ]);
 }
-
-
 public function closeFinal(Request $request)
 {
     $traceId = (string) Str::uuid();
@@ -293,23 +395,44 @@ public function closeFinal(Request $request)
 
     $authUserId = (int) $authUser->id;
 
-    $guardiaId = Guardias::query()
-        ->where('id_user', $authUserId)
+    $isAdmin = method_exists($authUser, 'isAdmin')
+        ? (bool) $authUser->isAdmin()
+        : $authUser->roles()->where('name', 'Administrador')->exists();
+
+    $data = $request->validate([
+        'guardia_id' => ['required', 'integer', Rule::exists('info_guard', 'id')],
+    ]);
+
+    $guardiaId = (int) $data['guardia_id'];
+
+    $guardia = Guardias::query()
+        ->where('id', $guardiaId)
         ->where('status', 1)
         ->whereNull('dateFinish')
-        ->orderByDesc('dateInit')
-        ->value('id');
+        ->first();
 
-    if (! $guardiaId) {
+    if (! $guardia) {
         return response()->json([
             'trace_id' => $traceId,
             'message' => 'No hay guardia activa para cerrar.',
             'closed' => false,
-        ], 200); // <- 200 para que frontend no truene
+        ], 200);
     }
 
-    DB::transaction(function () use ($guardiaId, $traceId) {
-        $g = Guardias::query()->where('id', $guardiaId)->lockForUpdate()->firstOrFail();
+    // ✅ Si no es admin, solo puede cerrar su propia guardia
+    if (! $isAdmin && (int) $guardia->id_user !== $authUserId) {
+        return response()->json([
+            'trace_id' => $traceId,
+            'message' => 'No puedes cerrar una guardia que no fue iniciada por ti.',
+            'closed' => false,
+        ], 403);
+    }
+
+    DB::transaction(function () use ($guardiaId, $traceId, $authUserId, $isAdmin) {
+        $g = Guardias::query()
+            ->where('id', $guardiaId)
+            ->lockForUpdate()
+            ->firstOrFail();
 
         if ($g->dateFinish === null) {
             $g->dateFinish = now();
@@ -320,6 +443,9 @@ public function closeFinal(Request $request)
         Log::info('[closeFinal] Guardia closed', [
             'trace_id' => $traceId,
             'guardia_id' => (int) $g->id,
+            'guardia_owner_user_id' => (int) $g->id_user,
+            'closed_by_user_id' => $authUserId,
+            'closed_by_is_admin' => $isAdmin,
             'dateFinish' => (string) $g->dateFinish,
         ]);
     });
@@ -328,10 +454,10 @@ public function closeFinal(Request $request)
         'trace_id' => $traceId,
         'message' => 'Guardia cerrada correctamente.',
         'closed' => true,
-        'guardia_id' => (int) $guardiaId,
+        'guardia_id' => (int) $guardia->id,
+        'guardia_owner_user_id' => (int) $guardia->id_user,
     ], 200);
 }
-
 
     public function show(string $id)
     {
@@ -363,4 +489,281 @@ public function closeFinal(Request $request)
     {
         //
     }
+
+    public function storeTicketFromGuardia(Request $request, int $id)
+{
+    $authUser = $request->user();
+    if (! $authUser) {
+        abort(401, 'No autenticado.');
+    }
+
+    $authUserId = (int) $authUser->id;
+
+    $isAdmin = method_exists($authUser, 'isAdmin')
+        ? (bool) $authUser->isAdmin()
+        : $authUser->roles()->where('name', 'Administrador')->exists();
+
+    $guardia = Guardias::query()
+        ->with('user:id,name,email')
+        ->where('id', $id)
+        ->where('status', 1)
+        ->whereNull('dateFinish')
+        ->first();
+
+    if (! $guardia) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No hay una guardia activa válida para crear el ticket.',
+        ], 404);
+    }
+
+    $isOwner = (int) $guardia->id_user === $authUserId;
+
+    if (! $isAdmin && ! $isOwner) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No tienes permisos para crear tickets en esta guardia.',
+        ], 403);
+    }
+
+    $data = $request->validate([
+        'numTicket' => [
+            'required',
+            'integer',
+            Rule::unique('tickets', 'numTicket'),
+        ],
+        'numTicketNoct' => ['nullable', 'integer'],
+        'titleTicket' => ['required', 'string', 'max:100'],
+        'descriptionTicket' => ['required', 'string', 'max:2000'],
+    ]);
+
+    $guardiaOwnerUserId = (int) $guardia->id_user;
+
+    $ticket = Tickets::create([
+        'numTicket'          => (int) $data['numTicket'],
+        'numTicketNoct'      => $data['numTicketNoct'] !== null ? (int) $data['numTicketNoct'] : null,
+        'user_create_ticket' => $guardiaOwnerUserId,
+        'assigned_user_id'   => $guardiaOwnerUserId,
+        'titleTicket'        => $data['titleTicket'],
+        'descriptionTicket'  => $data['descriptionTicket'],
+        'status'             => 1,
+        'id_guardia'         => (int) $guardia->id,
+    ]);
+
+    $ticket->load([
+        'creator:id,name,email',
+        'assignedUser:id,name,email',
+        'guardia:id,id_user,dateInit,dateFinish,status',
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'ticket' => $ticket,
+        'guardia_id' => (int) $guardia->id,
+        'guardia_owner_user_id' => $guardiaOwnerUserId,
+        'message' => 'Ticket creado correctamente dentro de la guardia.',
+    ], 201);
+}
+
+
+public function storeMonitoreosFromGuardia(Request $request, int $id)
+{
+    $authUser = $request->user();
+    if (! $authUser) {
+        return response()->json([
+            'message' => 'No autenticado. Envía tu token.',
+            'code'    => 'UNAUTHENTICATED',
+        ], 401);
+    }
+
+    $authUserId = (int) $authUser->id;
+
+    $isAdmin = method_exists($authUser, 'isAdmin')
+        ? (bool) $authUser->isAdmin()
+        : $authUser->roles()->where('name', 'Administrador')->exists();
+
+    $guardia = Guardias::query()
+        ->where('id', $id)
+        ->where('status', 1)
+        ->whereNull('dateFinish')
+        ->first();
+
+    if (! $guardia) {
+        return response()->json([
+            'message' => 'No se encontró una guardia activa válida.',
+        ], 404);
+    }
+
+    $guardiaOwnerId = (int) $guardia->id_user;
+    $isOwner = $guardiaOwnerId === $authUserId;
+
+    if (! $isAdmin && ! $isOwner) {
+        return response()->json([
+            'message' => 'No tienes permisos para registrar monitoreos en esta guardia.',
+        ], 403);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'site' => ['required', 'string', Rule::in(['veeam', 'site24', 'sophos'])],
+        'rows' => ['required', 'array', 'min:1'],
+
+        'rows.*.client_id'   => ['required', 'integer', 'min:1'],
+        'rows.*.siteApp'     => ['nullable', 'integer', 'min:1'],
+        'rows.*.estatus'     => ['required', 'string'],
+        'rows.*.observacion' => ['nullable', 'string', 'max:5000'],
+        'rows.*.dateRest'    => ['nullable', 'date_format:Y-m-d'],
+    ], [
+        'rows.required' => 'No se recibieron registros.',
+        'rows.*.dateRest.date_format' => 'dateRest debe venir en formato YYYY-MM-DD.',
+    ]);
+
+    $validator->after(function ($v) use ($request) {
+        $site = (string) $request->input('site', '');
+        $rows = (array) $request->input('rows', []);
+
+        if ($site === 'veeam') {
+            $veeamAppIds = DB::table('app_service')
+                ->where('nameService', 'like', '%Veeam%')
+                ->pluck('id')
+                ->map(fn ($x) => (int) $x)
+                ->all();
+
+            $clientIds = collect($rows)
+                ->pluck('client_id')
+                ->filter()
+                ->map(fn ($x) => (int) $x)
+                ->unique()
+                ->values()
+                ->all();
+
+            $appsByClient = ClienteVeeam::query()
+                ->whereIn('id', $clientIds)
+                ->pluck('app', 'id')
+                ->map(fn ($x) => (int) $x)
+                ->all();
+
+            foreach ($rows as $i => $row) {
+                $clientId = (int) ($row['client_id'] ?? 0);
+                $estatus  = (string) ($row['estatus'] ?? '');
+
+                $realApp = (int) ($appsByClient[$clientId] ?? 0);
+
+                if (! $realApp) {
+                    $v->errors()->add("rows.$i.client_id", 'Cliente Veeam no encontrado o sin app asignada.');
+                    continue;
+                }
+
+                if (! in_array($realApp, $veeamAppIds, true)) {
+                    $v->errors()->add("rows.$i.client_id", 'El cliente tiene un app no válido para Veeam.');
+                }
+
+                if (! in_array($estatus, ['1','2','3','4','5','6'], true)) {
+                    $v->errors()->add("rows.$i.estatus", 'Estatus inválido para Veeam (solo 1..6).');
+                }
+
+                if (! empty($row['siteApp'])) {
+                    $sent = (int) $row['siteApp'];
+                    if ($sent !== $realApp) {
+                        $v->errors()->add("rows.$i.siteApp", 'siteApp enviado no coincide con el app real del cliente.');
+                    }
+                }
+            }
+
+            return;
+        }
+
+        foreach ($rows as $i => $row) {
+            $siteApp = (int) ($row['siteApp'] ?? 0);
+            if ($siteApp <= 0) {
+                $v->errors()->add("rows.$i.siteApp", 'siteApp es obligatorio para este site.');
+            }
+        }
+    });
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validación fallida.',
+            'errors'  => $validator->errors(),
+        ], 422);
+    }
+
+    $site = (string) $request->input('site');
+    $rows = (array) $request->input('rows');
+
+    try {
+        DB::transaction(function () use ($rows, $site, $guardia, $guardiaOwnerId) {
+            $now = now();
+            $insert = [];
+
+            $appsByClient = [];
+            if ($site === 'veeam') {
+                $clientIds = collect($rows)
+                    ->pluck('client_id')
+                    ->filter()
+                    ->map(fn ($x) => (int) $x)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $appsByClient = ClienteVeeam::query()
+                    ->whereIn('id', $clientIds)
+                    ->pluck('app', 'id')
+                    ->map(fn ($x) => (int) $x)
+                    ->all();
+            }
+
+            foreach ($rows as $r) {
+                $estatus = (string) ($r['estatus'] ?? '');
+                $clientId = (int) ($r['client_id'] ?? 0);
+
+                $concluido = in_array($estatus, ['1', '2'], true) ? 2 : 1;
+
+                $siteApp = $site === 'veeam'
+                    ? (int) ($appsByClient[$clientId] ?? 0)
+                    : (int) ($r['siteApp'] ?? 0);
+
+                $insert[] = [
+                    'siteApp'     => $siteApp,
+                    'client_id'   => $clientId,
+                    'dateRest'    => $r['dateRest'] ?? null,
+                    'estatus'     => $estatus,
+                    'observacion' => $r['observacion'] ?? null,
+                    'concluido'   => $concluido,
+                    'id_guard'    => (int) $guardia->id,
+                    'user_Cre'    => $guardiaOwnerId,
+                    'user_Upd'    => $guardiaOwnerId,
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
+                ];
+            }
+
+            Monitoreos::insert($insert);
+        });
+
+        return response()->json([
+            'message'    => 'Monitoreos guardados correctamente en la guardia.',
+            'count'      => count($rows),
+            'guardia_id' => (int) $guardia->id,
+            'user_id'    => $guardiaOwnerId,
+        ], 201);
+
+    } catch (Throwable $e) {
+        Log::error('storeMonitoreosFromGuardia failed', [
+            'error'      => $e->getMessage(),
+            'file'       => $e->getFile(),
+            'line'       => $e->getLine(),
+            'rows_count' => count($rows),
+            'auth_user'  => $authUserId,
+            'guardia_id' => (int) $guardia->id,
+            'guardia_user_id' => $guardiaOwnerId,
+            'site'       => $site,
+        ]);
+
+        return response()->json([
+            'message' => 'Error al guardar monitoreos de la guardia.',
+            'code'    => 'SERVER_ERROR',
+            'debug'   => config('app.debug') ? $e->getMessage() : null,
+        ], 500);
+    }
+}
 }
