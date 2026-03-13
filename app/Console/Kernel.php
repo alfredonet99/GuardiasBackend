@@ -13,7 +13,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-         $schedule->command('guardias:close-expired --minutes=1620')
+         $schedule->command('guardias:close-expired --minutes=1080')
         ->everyTwoHours()
         ->withoutOverlapping()
         ->runInBackground();
