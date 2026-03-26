@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Operaciones\GuardiasController;
 use App\Http\Controllers\Operaciones\MonitoreoController;
+use App\Http\Controllers\Operaciones\PDFController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Operaciones\NetSuiteController;
 use App\Http\Controllers\Operaciones\ClienteVeeamController;
@@ -59,4 +60,6 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('/monitoreos/pendientes/veeam',[MonitoreoController::class,'pendientesVeeam']);
         Route::patch('/monitoreos/close/guard/{id}',[MonitoreoController::class,'MonitGuardEditFromGuardia']);
         Route::get('/monitoreos/dashboard',[MonitoreoController::class,'MonitDash']);
+
+        Route::post('/reportes/pdf/tickets',[PDFController::class,'pdfticket']);
     });
