@@ -8,8 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Throwable;
 use Illuminate\Support\Facades\DB;
-use App\Models\Operaciones\Monitoreos;
 use Illuminate\Support\Facades\Log;
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClienteVeeamController extends Controller
 {
@@ -406,6 +412,90 @@ class ClienteVeeamController extends Controller
         'siteAppId' => $siteAppId,
     ], 200);
 }
+
+    public function ExportDataClientes(): StreamedResponse
+    {
+        $clientes = ClienteVeeam::query()
+            ->with('AppCV')
+            ->select('c_veeam.*')
+            ->orderBy('c_veeam.id')
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setTitle('Clientes Veeam');
+
+        // Encabezados
+        $headers = [
+            'A1' => 'ID CLIENTE',
+            'B1' => 'NOMBRE',
+            'C1' => 'APLICATIVO',
+            'D1' => 'REPOSITORIO',
+            'E1' => 'JOBS',
+            'F1' => 'ESTATUS',
+        ];
+
+        foreach ($headers as $cell => $text) {
+            $sheet->setCellValue($cell, $text);
+        }
+
+        // Estilo encabezados
+        $sheet->getStyle('A1:F1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:F1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:F1')->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setARGB('FFD9EAF7');
+
+        // Datos
+        $row = 2;
+
+        foreach ($clientes as $cliente) {
+            $estatus = ((int) $cliente->activo === 1) ? 'ACTIVO' : 'INACTIVO';
+
+            $sheet->setCellValueExplicit(
+                'A' . $row,
+                (string) ($cliente->numCV ?? ''),
+                DataType::TYPE_STRING
+            );
+
+            $sheet->setCellValue('B' . $row, $cliente->nameCV ?? '');
+
+            $sheet->setCellValue(
+                'C' . $row,
+                $cliente->AppCV->nameService ?? 'SIN APLICATIVO'
+            );
+
+            $sheet->setCellValue('D' . $row, $cliente->backup ?? '');
+            $sheet->setCellValue('E' . $row, $cliente->jobs ?? '');
+            $sheet->setCellValue('F' . $row, $estatus);
+
+            $row++;
+        }
+
+        // Auto tamaño de columnas
+        foreach (range('A', 'F') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        // Centrar columnas específicas
+        $lastRow = max($row - 1, 1);
+        $sheet->getStyle("A1:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("E1:F{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Congelar encabezado
+        $sheet->freezePane('A2');
+
+        $fileName = 'clientes_veeam_' . now()->format('Y-m-d') . '.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
 
 
 
