@@ -21,6 +21,7 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::delete('/cliente-veeam/{id}/delete',[ClienteVeeamController::class,'destroy']);
         Route::patch('/clientes/veeam/{id}/client-deactivate', [ClienteVeeamController::class, 'ClientDeactivate']);
         Route::get('/obtener/lista-veeam',[ClienteVeeamController::class,'SelectVeeam']);
+        Route::get('/clientes-veeam/export', [ClienteVeeamController::class, 'ExportDataClientes']);
 
         Route::get('/app',[AppController::class,'index']);
         Route::patch('/app/{id}/app-deactivate', [AppController::class, 'toggleActivo'])->name('appclient.status');
