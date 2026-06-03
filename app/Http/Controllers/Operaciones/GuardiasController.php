@@ -460,9 +460,117 @@ public function closeFinal(Request $request)
 }
 
     public function show(string $id)
-    {
-        
+{
+    $authUser = request()->user();
+
+    if (! $authUser) {
+        abort(401, 'No autenticado.');
     }
+
+    $authUserId = (int) $authUser->id;
+
+    /**
+     * Mismo criterio que tu index:
+     * Administrador + Service Support Cloud Coordinator pueden ver todas las guardias.
+     * Los demás solo pueden ver las propias.
+     */
+    $canSeeAll = $authUser->roles()
+        ->whereIn('name', ['Administrador', 'Service Support Cloud Coordinator'])
+        ->exists();
+
+    $guardia = Guardias::query()
+        ->with('user:id,name,email')
+        ->where('id', (int) $id)
+        ->first();
+
+    if (! $guardia) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Guardia no encontrada.',
+        ], 404);
+    }
+
+    $isOwner = (int) $guardia->id_user === $authUserId;
+
+    if (! $canSeeAll && ! $isOwner) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No tienes permisos para consultar esta guardia.',
+        ], 403);
+    }
+
+    $tickets = Tickets::query()
+        ->select([
+            'id',
+            'numTicket',
+            'numTicketNoct',
+            'user_create_ticket',
+            'assigned_user_id',
+            'titleTicket',
+            'descriptionTicket',
+            'status',
+            'id_guardia',
+            'created_at',
+            'updated_at',
+        ])
+        ->with([
+            'creator:id,name,email',
+            'assignedUser:id,name,email',
+            'guardia:id,id_user,dateInit,dateFinish,status',
+        ])
+        ->where('id_guardia', (int) $guardia->id)
+        ->orderByDesc('updated_at')
+        ->orderByDesc('created_at')
+        ->get();
+
+    $monitoreos = Monitoreos::query()
+        ->select([
+            'id',
+            'siteApp',
+            'client_id',
+            'dateRest',
+            'estatus',
+            'observacion',
+            'concluido',
+            'id_guard',
+            'user_Cre',
+            'user_Upd',
+            'created_at',
+            'updated_at',
+        ])
+        ->where('id_guard', (int) $guardia->id)
+        ->orderByDesc('updated_at')
+        ->orderByDesc('created_at')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'guardia' => [
+            'id' => (int) $guardia->id,
+            'id_user' => (int) $guardia->id_user,
+            'user' => $guardia->user,
+            'dateInit' => $guardia->dateInit,
+            'dateFinish' => $guardia->dateFinish,
+            'status' => (int) $guardia->status,
+            'status_label' => $this->statusMap[(int) $guardia->status] ?? 'Desconocido',
+            'created_at' => $guardia->created_at,
+            'updated_at' => $guardia->updated_at,
+        ],
+        'tickets' => $tickets,
+        'monitoreos' => $monitoreos,
+        'totals' => [
+            'tickets' => $tickets->count(),
+            'monitoreos' => $monitoreos->count(),
+        ],
+        'statusMap' => $this->statusMap,
+        'auth' => [
+            'id' => $authUserId,
+            'name' => $authUser->name,
+            'can_see_all' => $canSeeAll,
+            'is_owner' => $isOwner,
+        ],
+    ]);
+}
 
 
 

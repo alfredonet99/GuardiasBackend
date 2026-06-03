@@ -22,6 +22,7 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::patch('/clientes/veeam/{id}/client-deactivate', [ClienteVeeamController::class, 'ClientDeactivate']);
         Route::get('/obtener/lista-veeam',[ClienteVeeamController::class,'SelectVeeam']);
         Route::get('/clientes-veeam/export', [ClienteVeeamController::class, 'ExportDataClientes']);
+        Route::post('/clientes/veeam/import',[ClienteVeeamController::class, 'ImportDataClientes']);
 
         Route::get('/app',[AppController::class,'index']);
         Route::patch('/app/{id}/app-deactivate', [AppController::class, 'toggleActivo'])->name('appclient.status');
@@ -39,6 +40,7 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::post('/guardias/close/data', [GuardiasController::class, 'closeFinal']);
         Route::post('/guardias/tickets/{id}', [GuardiasController::class,'storeTicketFromGuardia']);
         Route::post('/guardias/monitoreos/{id}', [GuardiasController::class,'storeMonitoreosFromGuardia']);
+        Route::get('/guardias/{id}/show',[GuardiasController::class,'show']);
 
         Route::get('/tickets',[TicketsController::class,'index']);
         Route::post('/tickets/crear',[TicketsController::class,'store']);

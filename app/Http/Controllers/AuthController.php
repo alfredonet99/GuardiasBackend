@@ -53,7 +53,10 @@ class AuthController extends Controller
         try {
             $newToken = auth('api')->refresh();
 
-            Log::info("🔄 TOKEN REFRESCADO", ['user_id' => auth('api')->id(),]);
+             Log::info("🔄 TOKEN REFRESCADO", [
+            'user_id'   => auth('api')->id(),
+            'new_token' => $newToken,        // ← aquí
+        ]);
 
             return response()->json([
                 'token'      => $newToken,
