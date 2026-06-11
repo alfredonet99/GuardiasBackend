@@ -63,6 +63,7 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('/monitoreos/pendientes/veeam',[MonitoreoController::class,'pendientesVeeam']);
         Route::patch('/monitoreos/close/guard/{id}',[MonitoreoController::class,'MonitGuardEditFromGuardia']);
         Route::get('/monitoreos/dashboard',[MonitoreoController::class,'MonitDash']);
+        Route::delete('/monitoreos/delete/{id}',[MonitoreoController::class,'destroy']);
 
         Route::post('/reportes/pdf/tickets',[PDFController::class,'pdfticket']);
     });
