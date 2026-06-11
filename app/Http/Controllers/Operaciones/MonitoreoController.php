@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
-use Iluminate\Validation\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class MonitoreoController extends Controller
@@ -520,9 +520,69 @@ class MonitoreoController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {
-        //
+{
+    try {
+        $user = request()->user();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No autenticado.',
+            ], 401);
+        }
+
+        $isAdmin = method_exists($user, 'hasRole') && $user->hasRole('Administrador');
+
+        // Ajusta este nombre al permiso real que tengas registrado
+        $canDelete = $user->can('monitoreos.delete');
+
+        if (! $isAdmin && ! $canDelete) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para eliminar monitoreos.',
+            ], 403);
+        }
+
+        $monitoreo = Monitoreos::find($id);
+
+        if (! $monitoreo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Monitoreo no encontrado.',
+            ], 404);
+        }
+
+        // Usuario con permiso sí puede eliminar, pero no si ya está concluido
+        if (! $isAdmin && (int) $monitoreo->concluido === 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No puedes eliminar un monitoreo concluido.',
+            ], 403);
+        }
+
+        $monitoreo->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Monitoreo eliminado correctamente.',
+        ], 200);
+
+    } catch (Throwable $e) {
+        Log::error('[Monitoreos.destroy] ERROR', [
+            'id'    => $id,
+            'error' => $e->getMessage(),
+            'file'  => $e->getFile(),
+            'line'  => $e->getLine(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al eliminar monitoreo.',
+            'code'    => 'SERVER_ERROR',
+            'debug'   => config('app.debug') ? $e->getMessage() : null,
+        ], 500);
     }
+}
 
 public function statusMonitoreo(int $id, Request $request)
 {
@@ -1108,5 +1168,7 @@ public function MonitDash(Request $request)
         ],
     ], 200);
 }
+
+
 
 }
