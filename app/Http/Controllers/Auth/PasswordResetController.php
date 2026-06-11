@@ -104,7 +104,7 @@ class PasswordResetController extends Controller
                 "seconds_passed" => $secondsPassed
             ]);
 
-            if ($secondsPassed > 120) {
+            if ($secondsPassed > 900) {
 
                 DB::table('password_reset_tokens')->where('email', $cleanEmail)->delete();
 
@@ -170,7 +170,7 @@ class PasswordResetController extends Controller
             $secondsPassed = Carbon::parse($resetData->created_at)
                 ->diffInRealSeconds(now());
 
-            if ($secondsPassed > 120) {
+            if ($secondsPassed > 900) {
                 DB::table('password_reset_tokens')->where('email', $cleanEmail)->delete();
                 return response()->json(["valid" => false, "reason" => "expired"], 400);
             }

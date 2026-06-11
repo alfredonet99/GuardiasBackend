@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Models\Operaciones;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+
+class Guardias extends Model
+{
+    use HasFactory;
+
+    protected $table='info_guard';
+
+    protected $fillable = [
+        'id_user',
+        'dateInit',
+        'dateFinish',
+        'status',
+    ];
+
+    protected $casts = [
+  'dateInit'   => 'datetime',
+  'dateFinish' => 'datetime',
+];
+
+
+    public function user(){
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function ticketsguard()
+    {
+        return $this->hasMany(Tickets::class, 'id_guardia', 'id');
+    }
+
+}
