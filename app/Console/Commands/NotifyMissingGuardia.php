@@ -15,11 +15,10 @@ class NotifyMissingGuardia extends Command
                             {--cooldown=180}
                             {--url=http://stratosphereoperations.com/inicio}';
 
-    protected $description = 'Si NO hay guardia activa, envía email para iniciar guardia (solo a las 08:00 y 21:00, con cooldown).';
+    protected $description = 'Si NO hay guardia activa del día actual, envía email para iniciar guardia en horarios establecidos.';
 
     public function handle(): int
     {
-        // ✅ Solo ejecuta la lógica a las 08:00 AM y 09:00 PM
         if (! $this->isAllowedTime()) {
             $this->info("🕒 Fuera de horario permitido (08:00 / 21:00). No se evalúa.");
             return Command::SUCCESS;
@@ -28,41 +27,50 @@ class NotifyMissingGuardia extends Command
         $url = (string) $this->option('url');
         $cooldownMinutes = (int) $this->option('cooldown');
 
-        // ✅ ¿Hay guardia activa?
-        $hasActive = Guardias::query()
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+
+        /*
+         * Nueva regla:
+         * Solo se considera guardia activa si fue iniciada HOY.
+         *
+         * Esto evita que una guardia activa de ayer bloquee
+         * la notificación del día actual.
+         */
+        $hasActiveToday = Guardias::query()
             ->whereNull('dateFinish')
             ->where('status', 1)
+            ->whereBetween('dateInit', [$todayStart, $todayEnd])
             ->exists();
 
-        if ($hasActive) {
-            $this->info("✅ Sí hay guardia activa. No se notifica.");
+        if ($hasActiveToday) {
+            $this->info("✅ Sí hay guardia activa del día actual. No se notifica.");
             return Command::SUCCESS;
         }
 
-        // ✅ Anti-spam: 1 aviso cada X minutos
-        $cacheKey = 'guardias:missing:cooldown';
+        $cacheKey = 'guardias:missing:cooldown:' . now()->format('Y-m-d-H');
 
         if (Cache::has($cacheKey)) {
-            $this->info("⏳ Sin guardia, pero en cooldown. No se notifica.");
+            $this->info("⏳ Sin guardia activa del día, pero en cooldown. No se notifica.");
             return Command::SUCCESS;
         }
 
-        // Si cooldown=0, no bloquees
         if ($cooldownMinutes > 0) {
             Cache::put($cacheKey, true, now()->addMinutes($cooldownMinutes));
         }
 
-        // ✅ Destino fijo
         $to = 'operationsstratosphere@stratospherecorp.com';
 
         Mail::to($to)->send(new GuardiaMissingMail($url));
 
-        $this->info("📩 Notificación enviada: NO hay guardia activa.");
+        $this->info("📩 Notificación enviada: NO hay guardia activa del día actual.");
 
         Log::info('guardias:notify-missing sent', [
             'to' => $to,
             'url' => $url,
             'cooldown' => $cooldownMinutes,
+            'today_start' => $todayStart->toDateTimeString(),
+            'today_end' => $todayEnd->toDateTimeString(),
             'now' => now()->toDateTimeString(),
         ]);
 
@@ -71,8 +79,6 @@ class NotifyMissingGuardia extends Command
 
     private function isAllowedTime(): bool
     {
-        // Usa timezone de Laravel (config/app.php)
-        // Solo permitir exactamente 08:00 y 21:00
         $hm = now()->format('H:i');
 
         return $hm === '08:00' || $hm === '21:00';
