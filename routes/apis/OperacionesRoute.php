@@ -9,6 +9,7 @@ use App\Http\Controllers\Operaciones\ClienteVeeamController;
 use App\Http\Controllers\Operaciones\AppController;
 use App\Http\Controllers\Operaciones\TicketsController;
 use App\Http\Controllers\Operaciones\MailGuardController;
+use App\Http\Controllers\Operaciones\GraficasController;    
 
 Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::get('clientes/netsuite', [NetSuiteController::class, 'index']);
@@ -69,4 +70,6 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::post('/reportes/pdf/tickets',[PDFController::class,'pdfticket']);
 
         Route::post('/mail/guardias/{guardia}/send-close-email',[MailGuardController::class,'send']);
+
+        Route::get('/graficas/monitoreos',[GraficasController::class,'MonitWeeklyChart']);
     });

@@ -825,16 +825,26 @@ public function dashboardTickets(Request $request)
     // ✅ Query base por CREADOR
     $creatorQuery = Tickets::query()->where('user_create_ticket', $uid);
 
-    // 1) Pendientes esta semana (ASIGNADOS)
-    $ticketsPendientesSemana = (clone $assignedQuery)
-        ->where('status', 1)
-        ->whereBetween('created_at', [$weekStart, $weekEnd])
-        ->count();
-
     // 2) Creados esta semana (CREADOS por el usuario)
     $ticketsCreadosSemana = (clone $creatorQuery)
         ->whereBetween('created_at', [$weekStart, $weekEnd])
         ->count();
+
+        // Tickets actualizados esta semana y asignados al usuario.
+    $ticketsActualizadosSemana = (clone $assignedQuery)
+    ->whereBetween('updated_at', [$weekStart, $weekEnd])
+    ->whereColumn('updated_at', '>', 'created_at')
+    ->count();
+
+    $totalTicketsConcluidosSemana = (clone $assignedQuery)
+        ->where('status', 2)
+        ->whereBetween('updated_at', [$weekStart, $weekEnd])
+        ->count();
+    
+    $totalTicketsAnuladosSemana = (clone $assignedQuery)
+        ->where('status', 3)
+        ->whereBetween('updated_at', [$weekStart, $weekEnd])
+        ->count();    
 
     // 3) Total creados mes (CREADOS por el usuario)
     $totalTicketsCreadosMes = (clone $creatorQuery)
@@ -885,8 +895,10 @@ public function dashboardTickets(Request $request)
             'end'   => $monthEnd->toDateString(),
         ],
         'counts' => [
-            'pending_week'     => $ticketsPendientesSemana,
             'created_week'     => $ticketsCreadosSemana,
+            'updated_week'     => $ticketsActualizadosSemana,
+            'closed_week'     => $totalTicketsConcluidosSemana,
+            'annulled_week'   => $totalTicketsAnuladosSemana,
             'total_created'    => $totalTicketsCreadosMes,
             'total_concluded'  => $totalTicketsConcluidosMes,
             'total_annulled'   => $totalTicketsAnuladosMes,

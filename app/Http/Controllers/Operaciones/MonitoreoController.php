@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use Carbon\Carbon;
 
 class MonitoreoController extends Controller
 {
@@ -1064,6 +1065,7 @@ public function MonitGuardEditFromGuardia(Request $request, int $id)
 public function MonitDash(Request $request)
 {
     $user = $request->user();
+
     if (! $user) {
         return response()->json([
             'message' => 'No autenticado. Envía tu token.',
@@ -1073,44 +1075,104 @@ public function MonitDash(Request $request)
 
     $userId = (int) $user->id;
 
-    $startDay   = now()->startOfDay();
-    $endDay     = now()->endOfDay();
-    $startMonth = now()->startOfMonth();
-    $endMonth   = now()->endOfMonth();
+    /*
+    |--------------------------------------------------------------------------
+    | Periodos
+    |--------------------------------------------------------------------------
+    */
 
-    // 1) ✅ Pendientes globales (sin importar quién lo creó)
+    $startDay = Carbon::now()
+        ->startOfDay();
+
+    $endDay = Carbon::now()
+        ->endOfDay();
+
+    $startWeek = Carbon::now()
+        ->startOfWeek(Carbon::MONDAY)
+        ->startOfDay();
+
+    $endWeek = Carbon::now()
+        ->endOfWeek(Carbon::SUNDAY)
+        ->endOfDay();
+
+    $startMonth = Carbon::now()
+        ->startOfMonth()
+        ->startOfDay();
+
+    $endMonth = Carbon::now()
+        ->endOfMonth()
+        ->endOfDay();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conteos semanales y actuales
+    |--------------------------------------------------------------------------
+    */
+
+    // Pendientes globales, sin importar quién los creó.
     $pendingAll = DB::table('monitoreos')
         ->where('concluido', 1)
         ->count();
 
-    // 2) ✅ Monitoreos del día resueltos por el usuario (hoy) => concluido=2 y user_Upd = userId, por updated_at
-    $doneTodayByUser = DB::table('monitoreos')
-        ->where('concluido', 2)
-        ->where('user_Upd', $userId)
-        ->whereBetween('updated_at', [$startDay, $endDay])
+    // Monitoreos creados por el usuario durante la semana actual.
+    $createdWeekByUser = DB::table('monitoreos')
+        ->where('user_Cre', $userId)
+        ->whereBetween('created_at', [$startWeek, $endWeek])
         ->count();
 
-    // 3) ✅ Total del mes del usuario (TODO lo que creó el usuario, cualquier concluido)
+ // Monitoreos concluidos por el usuario durante la semana actual.
+    $concludedWeekByUser = DB::table('monitoreos')
+        ->where('concluido', 2)
+        ->where('user_Upd', $userId)
+        ->whereBetween('updated_at', [$startWeek, $endWeek])
+        ->count();
+
+    // Monitoreos anulados por el usuario durante la semana actual.
+    $annulledWeekByUser = DB::table('monitoreos')
+    ->where('concluido', 3)
+    ->where('user_Upd', $userId)
+    ->whereBetween('updated_at', [$startWeek, $endWeek])
+    ->count();    
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conteos mensuales
+    |--------------------------------------------------------------------------
+    */
+
+    // Todos los monitoreos creados por el usuario durante el mes.
     $totalMonthByUser = DB::table('monitoreos')
         ->where('user_Cre', $userId)
         ->whereBetween('created_at', [$startMonth, $endMonth])
         ->count();
 
-    // 4) ✅ Concluidos del mes por el usuario => concluido=2 y user_Upd = userId, por updated_at
+    // Monitoreos concluidos por el usuario durante el mes.
     $concludedMonthByUser = DB::table('monitoreos')
         ->where('concluido', 2)
         ->where('user_Upd', $userId)
         ->whereBetween('updated_at', [$startMonth, $endMonth])
         ->count();
 
-    // 5) ✅ Anulados del mes por el usuario => concluido=3 y user_Upd = userId, por updated_at
+    // Monitoreos anulados por el usuario durante el mes.
     $annulledMonthByUser = DB::table('monitoreos')
         ->where('concluido', 3)
         ->where('user_Upd', $userId)
         ->whereBetween('updated_at', [$startMonth, $endMonth])
         ->count();
 
-    // ✅ Listado para tabla (pendientes globales)
+    /*
+    |--------------------------------------------------------------------------
+    | Tabla de monitoreos pendientes y anulados
+    |--------------------------------------------------------------------------
+    |
+    | Se incluyen:
+    | 1 = Pendiente
+    | 3 = Anulado
+    |
+    | Los anulados permanecen visibles para poder reactivarlos.
+    |
+    */
+
     $pendingMonitoreos = DB::table('monitoreos as m')
         ->join('app_service as a', 'a.id', '=', 'm.siteApp')
         ->leftJoin('c_veeam as cv', 'cv.id', '=', 'm.client_id')
@@ -1128,47 +1190,91 @@ public function MonitDash(Request $request)
             'm.created_at',
             'm.updated_at',
         ])
-        ->where('m.concluido', 1)
+        ->whereIn('m.concluido', [1, 3])
         ->orderByDesc('m.created_at')
-        ->limit(50) // ajusta si quieres
+        ->limit(50)
         ->get()
-        ->map(function ($r) {
-            $clientLabel = trim(($r->client_code ?? '') . ' - ' . ($r->client_name ?? ''));
-            if ($clientLabel === '-' || $clientLabel === '') $clientLabel = '—';
+        ->map(function ($monitoreo) {
+            $clientCode = trim((string) ($monitoreo->client_code ?? ''));
+            $clientName = trim((string) ($monitoreo->client_name ?? ''));
+
+            $clientLabel = trim(
+                implode(' - ', array_filter([
+                    $clientCode,
+                    $clientName,
+                ]))
+            );
+
+            if ($clientLabel === '') {
+                $clientLabel = '—';
+            }
+
+            $status = (int) $monitoreo->concluido;
 
             return [
-                'id'            => (int) $r->id,
-                'client_id'      => (int) $r->client_id,
-                'siteApp'        => (int) $r->siteApp,
-                'siteApp_name'   => $r->siteApp_name,
-                'client_label'   => $clientLabel,
-                'dateRest'       => $r->dateRest,
-                'estatus'        => (string) $r->estatus,
-                'observacion'    => $r->observacion,
-                'concluido'      => (int) $r->concluido,
-                'concluido_label'=> $this->statusMonit[(int) $r->concluido] ?? '—',
-                'created_at'     => $r->created_at,
-                'updated_at'     => $r->updated_at,
+                'id'              => (int) $monitoreo->id,
+                'client_id'       => $monitoreo->client_id !== null
+                    ? (int) $monitoreo->client_id
+                    : null,
+                'siteApp'         => $monitoreo->siteApp !== null
+                    ? (int) $monitoreo->siteApp
+                    : null,
+                'siteApp_name'    => $monitoreo->siteApp_name ?? '—',
+                'client_label'    => $clientLabel,
+                'dateRest'        => $monitoreo->dateRest,
+                'estatus'         => (string) ($monitoreo->estatus ?? ''),
+                'observacion'     => $monitoreo->observacion,
+                'concluido'       => $status,
+                'concluido_label' => $this->statusMonit[$status] ?? '—',
+                'created_at'      => $monitoreo->created_at,
+                'updated_at'      => $monitoreo->updated_at,
             ];
         })
         ->values();
 
+    /*
+    |--------------------------------------------------------------------------
+    | Respuesta
+    |--------------------------------------------------------------------------
+    */
+
     return response()->json([
         'counts' => [
             'pending_all'          => $pendingAll,
-            'done_today_user'      => $doneTodayByUser,
+            'created_week_user'    => $createdWeekByUser,
+           'concluded_week_user' => $concludedWeekByUser,
+            'annulled_week_user'  => $annulledWeekByUser,
             'total_month_user'     => $totalMonthByUser,
             'concluded_month_user' => $concludedMonthByUser,
             'annulled_month_user'  => $annulledMonthByUser,
         ],
+
+        'pending_count' => $pendingMonitoreos
+            ->where('concluido', 1)
+            ->count(),
+
         'pending_monitoreos' => $pendingMonitoreos,
+
+        'week' => [
+            'start' => $startWeek->toDateString(),
+            'end'   => $endWeek->toDateString(),
+        ],
+
+        'month' => [
+            'start' => $startMonth->toDateString(),
+            'end'   => $endMonth->toDateString(),
+        ],
+
         'meta' => [
-            'today' => now()->toDateString(),
-            'month' => now()->format('Y-m'),
+            'today' => Carbon::now()->toDateString(),
+            'month' => Carbon::now()->format('Y-m'),
+            'user'  => [
+                'id'   => $userId,
+                'name' => $user->name ?? null,
+            ],
         ],
     ], 200);
 }
-
 
 
 }
