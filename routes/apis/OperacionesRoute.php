@@ -72,4 +72,5 @@ Route::prefix('operaciones')->middleware('area.access:1')->group(function () {
         Route::post('/mail/guardias/{guardia}/send-close-email',[MailGuardController::class,'send']);
 
         Route::get('/graficas/monitoreos',[GraficasController::class,'MonitWeeklyChart']);
+        Route::get('/graficas/tickets',[GraficasController::class,'TicketsWeekChart']);
     });

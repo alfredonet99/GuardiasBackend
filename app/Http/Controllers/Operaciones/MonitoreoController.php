@@ -1146,6 +1146,13 @@ public function MonitDash(Request $request)
         ->whereBetween('created_at', [$startMonth, $endMonth])
         ->count();
 
+    //Monitoreos Actualizados    
+    $UpdateMontByUser = DB::table('monitoreos')
+    ->where('user_Upd',$userId)
+    ->whereBetween('updated_at', [$startMonth, $endMonth])
+    ->whereColumn('updated_at', '>', 'created_at')
+    ->count();
+
     // Monitoreos concluidos por el usuario durante el mes.
     $concludedMonthByUser = DB::table('monitoreos')
         ->where('concluido', 2)
@@ -1245,6 +1252,7 @@ public function MonitDash(Request $request)
            'concluded_week_user' => $concludedWeekByUser,
             'annulled_week_user'  => $annulledWeekByUser,
             'total_month_user'     => $totalMonthByUser,
+            'UpdateMontByUser'     => $UpdateMontByUser,
             'concluded_month_user' => $concludedMonthByUser,
             'annulled_month_user'  => $annulledMonthByUser,
         ],
