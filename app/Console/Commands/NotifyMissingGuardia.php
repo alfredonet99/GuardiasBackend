@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Operaciones\Guardias;
@@ -11,76 +10,113 @@ use App\Mail\GuardiaMissingMail;
 
 class NotifyMissingGuardia extends Command
 {
+    private const DESTINATARIO = 'operationsstratosphere@stratospherecorp.com';
+
     protected $signature = 'guardias:notify-missing
-                            {--cooldown=180}
                             {--url=http://stratosphereoperations.com/inicio}';
 
-    protected $description = 'Si NO hay guardia activa del día actual, envía email para iniciar guardia en horarios establecidos.';
+    protected $description = 'Evalúa guardias entre las 17:00 y las 09:00 del día siguiente.';
 
     public function handle(): int
     {
-        if (! $this->isAllowedTime()) {
-            $this->info("🕒 Fuera de horario permitido (08:00 / 21:00). No se evalúa.");
+        $hora = now()->format('H:i');
+
+        if (!in_array($hora, ['21:00', '00:00', '09:00'], true)) {
+            $this->info('Fuera de horario de evaluación: 21:00, 00:00 o 09:00.');
             return Command::SUCCESS;
         }
 
-        $url = (string) $this->option('url');
-        $cooldownMinutes = (int) $this->option('cooldown');
+        [$inicio, $fin] = $this->getPeriodo($hora);
 
-        $todayStart = now()->startOfDay();
-        $todayEnd = now()->endOfDay();
+        // A las 09:00 confirma si hubo algún inicio durante todo el periodo.
+        if ($hora === '09:00') {
+            $huboInicio = Guardias::query()
+                ->whereBetween('dateInit', [$inicio, $fin])
+                ->exists();
 
-        /*
-         * Nueva regla:
-         * Solo se considera guardia activa si fue iniciada HOY.
-         *
-         * Esto evita que una guardia activa de ayer bloquee
-         * la notificación del día actual.
-         */
-        $hasActiveToday = Guardias::query()
+            if ($huboInicio) {
+                $this->info('Se registró al menos un inicio de guardia durante el periodo.');
+                return Command::SUCCESS;
+            }
+
+            return $this->notifyFinalMissing($inicio, $fin);
+        }
+
+        // A las 21:00 y 00:00 verifica si existe una guardia activa del periodo.
+        $hasActiveGuardia = Guardias::query()
             ->whereNull('dateFinish')
             ->where('status', 1)
-            ->whereBetween('dateInit', [$todayStart, $todayEnd])
+            ->whereBetween('dateInit', [$inicio, now()])
             ->exists();
 
-        if ($hasActiveToday) {
-            $this->info("✅ Sí hay guardia activa del día actual. No se notifica.");
+        if ($hasActiveGuardia) {
+            $this->info('Existe una guardia activa dentro del periodo.');
             return Command::SUCCESS;
         }
 
-        $cacheKey = 'guardias:missing:cooldown:' . now()->format('Y-m-d-H');
+        return $this->notifyReminder($hora, $inicio, $fin);
+    }
 
-        if (Cache::has($cacheKey)) {
-            $this->info("⏳ Sin guardia activa del día, pero en cooldown. No se notifica.");
-            return Command::SUCCESS;
+    private function getPeriodo(string $hora): array
+    {
+        if ($hora === '21:00') {
+            $inicio = now()->copy()->startOfDay()->setTime(17, 0);
+            $fin = now()->copy()->addDay()->startOfDay()->setTime(9, 0);
+
+            return [$inicio, $fin];
         }
 
-        if ($cooldownMinutes > 0) {
-            Cache::put($cacheKey, true, now()->addMinutes($cooldownMinutes));
-        }
+        $inicio = now()->copy()->subDay()->startOfDay()->setTime(17, 0);
+        $fin = now()->copy()->startOfDay()->setTime(9, 0);
 
-        $to = 'operationsstratosphere@stratospherecorp.com';
+        return [$inicio, $fin];
+    }
 
-        Mail::to($to)->send(new GuardiaMissingMail($url));
+    private function notifyReminder(string $hora, $inicio, $fin): int
+    {
+        $url = (string) $this->option('url');
 
-        $this->info("📩 Notificación enviada: NO hay guardia activa del día actual.");
+        Mail::to(self::DESTINATARIO)->send(
+            new GuardiaMissingMail($url)
+        );
 
-        Log::info('guardias:notify-missing sent', [
-            'to' => $to,
-            'url' => $url,
-            'cooldown' => $cooldownMinutes,
-            'today_start' => $todayStart->toDateTimeString(),
-            'today_end' => $todayEnd->toDateTimeString(),
+        $this->info("{$hora}: No hay guardia activa. Recordatorio enviado.");
+
+        Log::warning('guardias:missing-reminder', [
+            'schedule' => $hora,
+            'to' => self::DESTINATARIO,
+            'period_start' => $inicio->toDateTimeString(),
+            'period_end' => $fin->toDateTimeString(),
             'now' => now()->toDateTimeString(),
         ]);
 
         return Command::SUCCESS;
     }
 
-    private function isAllowedTime(): bool
+    private function notifyFinalMissing($inicio, $fin): int
     {
-        $hm = now()->format('H:i');
+        $mensaje = "NO HUBO INICIO DE GUARDIA\n\n";
+        $mensaje .= "Se confirma que no se registró ningún inicio de guardia durante el periodo establecido.\n\n";
+        $mensaje .= "Periodo evaluado:\n";
+        $mensaje .= "Desde: {$inicio->format('d/m/Y H:i')}\n";
+        $mensaje .= "Hasta: {$fin->format('d/m/Y H:i')}\n\n";
+        $mensaje .= "El periodo concluyó sin registro de inicio de guardia.";
 
-        return $hm === '08:00' || $hm === '21:00';
+        Mail::raw($mensaje, function ($message) {
+            $message
+                ->to(self::DESTINATARIO)
+                ->subject('Alerta - No hubo inicio de guardia');
+        });
+
+        $this->info('09:00: Se confirma que no hubo inicio de guardia.');
+
+        Log::warning('guardias:missing-final', [
+            'to' => self::DESTINATARIO,
+            'period_start' => $inicio->toDateTimeString(),
+            'period_end' => $fin->toDateTimeString(),
+            'now' => now()->toDateTimeString(),
+        ]);
+
+        return Command::SUCCESS;
     }
 }
