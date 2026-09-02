@@ -24,13 +24,13 @@ class NotifyMissingGuardia extends Command
         $hm = now()->format('H:i');
 
         $recordatorios = [
-            '08:00' => [
+            '11:00' => [
                 'titulo' => 'Primer recordatorio del día.',
-                'subject' => 'Recordatorio - Guardias activas 08:00 AM',
+                'subject' => 'Recordatorio - Guardias activas 11:00 AM',
             ],
-            '12:00' => [
-                'titulo' => 'Segundo recordatorio del día. Las siguientes guardias continúan activas al mediodía.',
-                'subject' => 'Segundo recordatorio - Guardias activas 12:00 PM',
+            '13:00' => [
+                'titulo' => 'Segundo recordatorio del día. Las siguientes guardias continúan activas a la 01:00 PM.',
+                'subject' => 'Segundo recordatorio - Guardias activas 01:00 PM',
             ],
             '16:00' => [
                 'titulo' => 'Tercer recordatorio del día. Las siguientes guardias continúan activas a las 04:00 PM.',
@@ -46,7 +46,7 @@ class NotifyMissingGuardia extends Command
                 $recordatorios[$hm]['subject']
             );
 
-            if ($hm === '08:00') {
+            if ($hm === '11:00') {
                 return $this->notifyMissingGuardia();
             }
 
@@ -58,7 +58,7 @@ class NotifyMissingGuardia extends Command
             return $this->notifyMissingGuardia();
         }
 
-        $this->info('Fuera de horario permitido: 08:00, 12:00, 16:00 o 21:00.');
+        $this->info('Fuera de horario permitido: 11:00, 13:00, 16:00 o 21:00.');
 
         return Command::SUCCESS;
     }
