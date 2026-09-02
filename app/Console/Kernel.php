@@ -15,21 +15,30 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground();
 
-        // Ejecuta las revisiones y recordatorios de guardias.
-        $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
+        // Envía recordatorios de guardias activas.
+        $schedule->command('guardias:notify-active')
             ->dailyAt('11:00')
             ->withoutOverlapping();
 
-        $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
+        $schedule->command('guardias:notify-active')
             ->dailyAt('13:00')
             ->withoutOverlapping();
 
-        $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
+        $schedule->command('guardias:notify-active')
             ->dailyAt('16:00')
             ->withoutOverlapping();
 
+        // Verifica si hubo inicio de guardia.
         $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
             ->dailyAt('21:00')
+            ->withoutOverlapping();
+
+        $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
+            ->dailyAt('00:00')
+            ->withoutOverlapping();
+
+        $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
+            ->dailyAt('09:00')
             ->withoutOverlapping();
     }
 

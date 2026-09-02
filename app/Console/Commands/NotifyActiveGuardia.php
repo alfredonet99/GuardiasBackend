@@ -3,25 +3,21 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Operaciones\Guardias;
-use App\Mail\GuardiaMissingMail;
 
-class NotifyMissingGuardia extends Command
+class NotifyActiveGuardia extends Command
 {
     private const DESTINATARIO = 'operationsstratosphere@stratospherecorp.com';
 
-    protected $signature = 'guardias:notify-missing
-                            {--cooldown=180}
-                            {--url=http://stratosphereoperations.com/inicio}';
+    protected $signature = 'guardias:notify-active';
 
-    protected $description = 'Verifica guardias faltantes y envía recordatorios de guardias activas.';
+    protected $description = 'Envía recordatorios de guardias que continúan activas.';
 
     public function handle(): int
     {
-        $hm = now()->format('H:i');
+        $hora = now()->format('H:i');
 
         $recordatorios = [
             '11:00' => [
@@ -38,56 +34,33 @@ class NotifyMissingGuardia extends Command
             ],
         ];
 
-        // Envía recordatorios de guardias activas en los horarios establecidos.
-        if (isset($recordatorios[$hm])) {
-            $this->notifyActiveGuardias(
-                $hm,
-                $recordatorios[$hm]['titulo'],
-                $recordatorios[$hm]['subject']
-            );
-
-            if ($hm === '11:00') {
-                return $this->notifyMissingGuardia();
-            }
-
+        // Solo ejecuta recordatorios en los horarios establecidos.
+        if (!isset($recordatorios[$hora])) {
+            $this->info('Fuera de horario permitido: 11:00, 13:00 o 16:00.');
             return Command::SUCCESS;
         }
 
-        // A las 21:00 verifica si falta una guardia del día.
-        if ($hm === '21:00') {
-            return $this->notifyMissingGuardia();
-        }
-
-        $this->info('Fuera de horario permitido: 11:00, 13:00, 16:00 o 21:00.');
-
-        return Command::SUCCESS;
-    }
-
-    private function notifyActiveGuardias(
-        string $horario,
-        string $titulo,
-        string $subject
-    ): int {
         $guardias = Guardias::with('user:id,name,email')
             ->whereNull('dateFinish')
             ->where('status', 1)
             ->orderBy('dateInit')
             ->get();
 
-        // Si no existen guardias activas no se envía correo.
         if ($guardias->isEmpty()) {
-            $this->info("{$horario}: No hay guardias activas.");
+            $this->info("{$hora}: No hay guardias activas.");
 
             Log::info('guardias:active-reminder no-active', [
-                'schedule' => $horario,
+                'schedule' => $hora,
                 'now' => now()->toDateTimeString(),
             ]);
 
             return Command::SUCCESS;
         }
 
+        $config = $recordatorios[$hora];
+
         $mensaje = "RECORDATORIO DE GUARDIAS ACTIVAS\n\n";
-        $mensaje .= "{$titulo}\n\n";
+        $mensaje .= "{$config['titulo']}\n\n";
         $mensaje .= "Actualmente existen las siguientes guardias activas:\n\n";
 
         foreach ($guardias as $guardia) {
@@ -107,74 +80,19 @@ class NotifyMissingGuardia extends Command
         $mensaje .= "Esto es un recordatorio diario de guardias activas.\n";
         $mensaje .= "No olvides cerrar tu guardia si se encuentra activa.";
 
-        Mail::raw($mensaje, function ($message) use ($subject) {
+        Mail::raw($mensaje, function ($message) use ($config) {
             $message
                 ->to(self::DESTINATARIO)
-                ->subject($subject);
+                ->subject($config['subject']);
         });
 
-        $this->info("{$horario}: Recordatorio enviado. Guardias activas: {$guardias->count()}.");
+        $this->info("{$hora}: Recordatorio enviado. Guardias activas: {$guardias->count()}.");
 
         Log::info('guardias:active-reminder sent', [
-            'schedule' => $horario,
+            'schedule' => $hora,
             'to' => self::DESTINATARIO,
             'active_guardias' => $guardias->count(),
             'guardias' => $guardias->pluck('id')->toArray(),
-            'now' => now()->toDateTimeString(),
-        ]);
-
-        return Command::SUCCESS;
-    }
-
-    private function notifyMissingGuardia(): int
-    {
-        $url = (string) $this->option('url');
-        $cooldownMinutes = (int) $this->option('cooldown');
-
-        $todayStart = now()->startOfDay();
-        $todayEnd = now()->endOfDay();
-
-        // Verifica si existe una guardia activa iniciada durante el día actual.
-        $hasActiveToday = Guardias::query()
-            ->whereNull('dateFinish')
-            ->where('status', 1)
-            ->whereBetween('dateInit', [$todayStart, $todayEnd])
-            ->exists();
-
-        if ($hasActiveToday) {
-            $this->info('Sí hay guardia activa del día actual.');
-
-            return Command::SUCCESS;
-        }
-
-        $cacheKey = 'guardias:missing:cooldown:' . now()->format('Y-m-d-H');
-
-        if (Cache::has($cacheKey)) {
-            $this->info('Sin guardia activa del día, pero la notificación está en cooldown.');
-
-            return Command::SUCCESS;
-        }
-
-        if ($cooldownMinutes > 0) {
-            Cache::put(
-                $cacheKey,
-                true,
-                now()->addMinutes($cooldownMinutes)
-            );
-        }
-
-        Mail::to(self::DESTINATARIO)->send(
-            new GuardiaMissingMail($url)
-        );
-
-        $this->info('Notificación enviada: no hay guardia activa del día actual.');
-
-        Log::info('guardias:notify-missing sent', [
-            'to' => self::DESTINATARIO,
-            'url' => $url,
-            'cooldown' => $cooldownMinutes,
-            'today_start' => $todayStart->toDateTimeString(),
-            'today_end' => $todayEnd->toDateTimeString(),
             'now' => now()->toDateTimeString(),
         ]);
 
