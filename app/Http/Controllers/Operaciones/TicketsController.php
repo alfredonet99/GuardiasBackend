@@ -695,54 +695,69 @@ public function updateCloseTickets(Request $request)
 }
 
 
-    public function StatusTicket(int $id, Request $request)
-    {
-        $data = $request->validate([
-            'status' => ['required', 'integer', Rule::in([1, 3])],
-        ]);
+   public function StatusTicket(int $id, Request $request)
+{
+    $user = $request->user();
 
-        $ticket = Tickets::find($id);
-
-        if (! $ticket) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ticket no encontrado.',
-            ], 404);
-        }
-
-        // ✅ Si está Concluido (2), no se puede cambiar
-        if ((int) $ticket->status === 2) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se puede modificar un ticket Concluido.',
-            ], 422);
-        }
-
-        $current = (int) $ticket->status;
-        $next    = (int) $data['status'];
-
-        // ✅ Solo transiciones 1 <-> 3
-        $allowed =
-            ($current === 1 && $next === 3) ||
-            ($current === 3 && $next === 1);
-
-        if (! $allowed) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transición de estatus no permitida. Solo se permite Abierto ⇄ Anulado.',
-            ], 422);
-        }
-
-        $ticket->status = $next;
-        $ticket->save();
-
+    if (! $user) {
         return response()->json([
-            'success' => true,
-            'message' => 'Estatus actualizado.',
-            'data'    => $ticket,
-            'status_label' => $this->statusTicket[$ticket->status] ?? $ticket->status,
-        ]);
+            'success' => false,
+            'message' => 'No autenticado.',
+        ], 401);
     }
+
+    $uid = (int) $user->id;
+
+    $data = $request->validate([
+        'status' => ['required', 'integer', Rule::in([1, 3])],
+    ]);
+
+    $ticket = Tickets::find($id);
+
+    if (! $ticket) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Ticket no encontrado.',
+        ], 404);
+    }
+
+    if ((int) $ticket->status === 2) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No se puede modificar un ticket Concluido.',
+        ], 422);
+    }
+
+    $current = (int) $ticket->status;
+    $next    = (int) $data['status'];
+
+    $allowed =
+        ($current === 1 && $next === 3) ||
+        ($current === 3 && $next === 1);
+
+    if (! $allowed) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Transición de estatus no permitida. Solo se permite Abierto ⇄ Anulado.',
+        ], 422);
+    }
+
+    $ticket->status = $next;
+
+    // El usuario que realiza el cambio queda como último asignado.
+    $ticket->assigned_user_id = $uid;
+
+    $ticket->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => $next === 3
+            ? 'Ticket anulado correctamente.'
+            : 'Ticket reactivado correctamente.',
+        'data' => $ticket,
+        'status_label' => $this->statusTicket[$ticket->status] ?? $ticket->status,
+    ]);
+}
 
 
     public function CloseTicket(int $id, Request $request)
@@ -806,56 +821,116 @@ public function dashboardTickets(Request $request)
     $user = $request->user('api') ?? $request->user();
 
     if (! $user) {
-        return response()->json(['message' => 'No autenticado'], 401);
+        return response()->json([
+            'message' => 'No autenticado',
+        ], 401);
     }
 
     $uid = (int) $user->id;
+    $now = Carbon::now();
 
-    // Semana actual (Lun-Dom)
-    $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->startOfDay();
-    $weekEnd   = Carbon::now()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+    /*
+    |--------------------------------------------------------------------------
+    | Periodos
+    |--------------------------------------------------------------------------
+    */
 
-    // Mes actual
-    $monthStart = Carbon::now()->startOfMonth()->startOfDay();
-    $monthEnd   = Carbon::now()->endOfMonth()->endOfDay();
+    // Semana actual: lunes a domingo.
+    $weekStart = $now->copy()
+        ->startOfWeek(Carbon::MONDAY)
+        ->startOfDay();
 
-    // ✅ Query base por ASIGNADO
-    $assignedQuery = Tickets::query()->where('assigned_user_id', $uid);
+    $weekEnd = $now->copy()
+        ->endOfWeek(Carbon::SUNDAY)
+        ->endOfDay();
 
-    // ✅ Query base por CREADOR
-    $creatorQuery = Tickets::query()->where('user_create_ticket', $uid);
+    // Mes actual.
+    $monthStart = $now->copy()
+        ->startOfMonth()
+        ->startOfDay();
 
-    // 1) Pendientes esta semana (ASIGNADOS)
-    $ticketsPendientesSemana = (clone $assignedQuery)
-        ->where('status', 1)
-        ->whereBetween('created_at', [$weekStart, $weekEnd])
-        ->count();
+    $monthEnd = $now->copy()
+        ->endOfMonth()
+        ->endOfDay();
 
-    // 2) Creados esta semana (CREADOS por el usuario)
+    /*
+    |--------------------------------------------------------------------------
+    | Consultas base
+    |--------------------------------------------------------------------------
+    */
+
+    // Tickets cuyo último usuario asignado es el usuario autenticado.
+    $assignedQuery = Tickets::query()
+        ->where('assigned_user_id', $uid);
+
+    // Tickets creados por el usuario autenticado.
+    $creatorQuery = Tickets::query()
+        ->where('user_create_ticket', $uid);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conteos semanales
+    |--------------------------------------------------------------------------
+    */
+
+    // Tickets creados por el usuario durante la semana.
     $ticketsCreadosSemana = (clone $creatorQuery)
         ->whereBetween('created_at', [$weekStart, $weekEnd])
         ->count();
 
-    // 3) Total creados mes (CREADOS por el usuario)
-    $totalTicketsCreadosMes = (clone $creatorQuery)
+    // Tickets actualizados por el usuario durante la semana.
+    $ticketsActualizadosSemana = (clone $assignedQuery)
+        ->whereBetween('updated_at', [$weekStart, $weekEnd])
+        ->whereColumn('updated_at', '>', 'created_at')
+        ->count();
+
+    // Tickets concluidos por el usuario durante la semana.
+    $ticketsConcluidosSemana = (clone $assignedQuery)
+        ->where('status', 2)
+        ->whereBetween('updated_at', [$weekStart, $weekEnd])
+        ->count();
+
+    // Tickets anulados por el usuario durante la semana.
+    $ticketsAnuladosSemana = (clone $assignedQuery)
+        ->where('status', 3)
+        ->whereBetween('updated_at', [$weekStart, $weekEnd])
+        ->count();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conteos mensuales
+    |--------------------------------------------------------------------------
+    */
+
+    // Tickets creados por el usuario durante el mes.
+    $ticketsCreadosMes = (clone $creatorQuery)
         ->whereBetween('created_at', [$monthStart, $monthEnd])
         ->count();
 
-    // ✅ 4) Total concluidos mes (CONCLUIDOS por el usuario)
-    // usamos assigned + updated_at porque concluir ocurre en la actualización
-    $totalTicketsConcluidosMes = (clone $assignedQuery)
+    // Tickets actualizados por el usuario durante el mes.
+    $ticketsActualizadosMes = (clone $assignedQuery)
+        ->whereBetween('updated_at', [$monthStart, $monthEnd])
+        ->whereColumn('updated_at', '>', 'created_at')
+        ->count();
+
+    // Tickets concluidos por el usuario durante el mes.
+    $ticketsConcluidosMes = (clone $assignedQuery)
         ->where('status', 2)
         ->whereBetween('updated_at', [$monthStart, $monthEnd])
         ->count();
 
-    // 5) Total anulados mes (ANULADOS por el usuario)
-    // ✅ ASIGNADOS + updated_at (porque el anulado ocurre al actualizar)
-    $totalTicketsAnuladosMes = (clone $assignedQuery)
+    // Tickets anulados por el usuario durante el mes.
+    $ticketsAnuladosMes = (clone $assignedQuery)
         ->where('status', 3)
         ->whereBetween('updated_at', [$monthStart, $monthEnd])
         ->count();
 
-    // ✅ Tabla: ABIERTOS + ANULADOS (para que NO desaparezcan al anular)
+    /*
+    |--------------------------------------------------------------------------
+    | Tickets abiertos y anulados
+    |--------------------------------------------------------------------------
+    */
+
     $pendingTickets = (clone $assignedQuery)
         ->with([
             'creator:id,name',
@@ -875,30 +950,52 @@ public function dashboardTickets(Request $request)
             'assigned_user_id',
         ]);
 
+    /*
+    |--------------------------------------------------------------------------
+    | Respuesta
+    |--------------------------------------------------------------------------
+    */
+
     return response()->json([
         'week' => [
             'start' => $weekStart->toDateString(),
             'end'   => $weekEnd->toDateString(),
         ],
+
         'month' => [
             'start' => $monthStart->toDateString(),
             'end'   => $monthEnd->toDateString(),
         ],
+
         'counts' => [
-            'pending_week'     => $ticketsPendientesSemana,
-            'created_week'     => $ticketsCreadosSemana,
-            'total_created'    => $totalTicketsCreadosMes,
-            'total_concluded'  => $totalTicketsConcluidosMes,
-            'total_annulled'   => $totalTicketsAnuladosMes,
+            // Semanales.
+            'created_week'   => $ticketsCreadosSemana,
+            'updated_week'   => $ticketsActualizadosSemana,
+            'closed_week'    => $ticketsConcluidosSemana,
+            'annulled_week'  => $ticketsAnuladosSemana,
+
+            // Mensuales.
+            'created_month'  => $ticketsCreadosMes,
+            'updated_month'  => $ticketsActualizadosMes,
+            'closed_month'   => $ticketsConcluidosMes,
+            'annulled_month' => $ticketsAnuladosMes,
+
+            // Compatibilidad con las claves anteriores.
+            'total_created'   => $ticketsCreadosMes,
+            'total_updated'   => $ticketsActualizadosMes,
+            'total_concluded' => $ticketsConcluidosMes,
+            'total_annulled'  => $ticketsAnuladosMes,
         ],
-        'pending_count' => $pendingTickets->count(),
+
+        'pending_count'   => $pendingTickets->count(),
         'pending_tickets' => $pendingTickets,
+
         'user' => [
-            'id' => $uid,
+            'id'   => $uid,
             'name' => $user->name ?? null,
         ],
-    ]);
-}
+    ], 200);
 
+}
 
 }

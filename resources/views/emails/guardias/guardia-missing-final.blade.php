@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Guardia cerrada por sistema</title>
+    <title>Guardia no registrada</title>
 </head>
 
 <body style="margin:0; padding:0; background:#f4f4f4; font-family:Arial, Helvetica, sans-serif;">
@@ -15,31 +15,38 @@
             <table width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:600px; background:#ffffff; border-radius:8px; overflow:hidden;">
                 <tr>
                     <td align="center" style=" background:#1f2937; padding:25px; color:#ffffff;">
-                        <h1 style="margin:0; font-size:24px; font-weight:600;">
-                            Guardia cerrada por sistema
+                         <h1 style="margin:0; font-size:24px; font-weight:600;">
+                            Guardia no registrada
                         </h1>
                     </td>
                 </tr>
 
                 <tr>
-                    <td style="padding:25px 30px;">
-
+                    <td style="padding:35px 30px;">
                         <p style="color:#374151; font-size:16px; line-height:1.6;">
-                            Hola {{ $guardia->user?->name ?? 'Usuario' }}, <br> Tu guardia fue cerrada automáticamente por el sistema después de 24 horas de ser iniciada.
+                            Se confirma que no se registro la guardia durante el periodo establecido.
                         </p>
 
                         <table width="100%" cellpadding="0" cellspacing="0" style="margin:25px 0; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px;">
                             <tr>
                                 <td style="padding:20px;">
                                     <p style=" margin:0 0 10px 0; color:#111827; font-size:15px;">
-                                      <strong>ID Guardia:</strong> {{ $guardia->id }}<br>
-                                      <strong>Inicio:</strong> {{ $guardia->dateInit?->format('d/m/Y H:i') ?? '—' }}<br>
-                                      <strong>Cierre:</strong> {{ $guardia->dateFinish?->format('d/m/Y H:i') ?? '—' }}<br>
-                                      <strong>Estatus:</strong> Cerrado por sistema<br>
+                                        <strong>Inicio del periodo:</strong><br>
+                                        {{ $inicio->format('d/m/Y H:i') }}
                                     </p>
+
+                                    <p style="margin:0; color:#111827; font-size:15px;">
+                                        <strong>Fin del periodo:</strong><br>
+                                        {{ $fin->format('d/m/Y H:i') }}
+                                    </p>
+
                                 </td>
                             </tr>
                         </table>
+
+                        <p style="color:#374151; font-size:16px; line-height:1.6;">
+                            El periodo concluyó sin ningún registro de guardia.
+                        </p>
                     </td>
                 </tr>
 

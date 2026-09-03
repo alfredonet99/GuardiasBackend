@@ -7,20 +7,39 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's command schedule.
-     */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
-         $schedule->command('guardias:close-expired --minutes=1080')
-        ->everyTwoHours()
-        ->withoutOverlapping()
-        ->runInBackground();
+        // Cierra automáticamente guardias vencidas.
+        $schedule->command('guardias:close-expired --minutes=1440')
+            ->everyTwoHours()
+            ->withoutOverlapping()
+            ->runInBackground();
 
-           $schedule->command('guardias:notify-missing --cooldown=180 --url=http://stratosphereoperations.com/inicio')
-        ->everyThreeHours()
-        ->withoutOverlapping();
+        // Envía recordatorios de guardias activas.
+        $schedule->command('guardias:notify-active')
+            ->dailyAt('11:00')
+            ->withoutOverlapping();
+
+        $schedule->command('guardias:notify-active')
+            ->dailyAt('13:00')
+            ->withoutOverlapping();
+
+        $schedule->command('guardias:notify-active')
+            ->dailyAt('16:00')
+            ->withoutOverlapping();
+
+        // Verifica si hubo inicio de guardia.
+        $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
+            ->dailyAt('21:00')
+            ->withoutOverlapping();
+
+        $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
+            ->dailyAt('00:00')
+            ->withoutOverlapping();
+
+        $schedule->command('guardias:notify-missing --url=http://stratosphereoperations.com/inicio')
+            ->dailyAt('09:00')
+            ->withoutOverlapping();
     }
 
     protected function commands(): void
