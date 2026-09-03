@@ -366,7 +366,7 @@ private function guardiaCloseRecipient(): string
 
         $html .= '
             <div style="margin-top:18px;color:#b6c2d2;font-size:12px;text-align:center;">
-                Correo generado automáticamente desde backend.
+                Este mensaje fue generado automáticamente por el sistema.
             </div>
         </div>';
 
