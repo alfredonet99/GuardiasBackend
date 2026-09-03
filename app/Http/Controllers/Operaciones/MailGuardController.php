@@ -86,8 +86,7 @@ public function send(Request $request, $guardia)
 
 private function guardiaCloseRecipient(): string
 {
-    //return 'operationsstratosphere@stratospherecorp.com';
-    return 'avillavicencio@teamnet.com.mx';
+    return 'operationsstratosphere@stratospherecorp.com';
 }
 
     private function esc($value): string
