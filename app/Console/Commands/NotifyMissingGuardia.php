@@ -15,7 +15,7 @@ class NotifyMissingGuardia extends Command
     protected $signature = 'guardias:notify-missing
                             {--url=http://stratosphereoperations.com/inicio}';
 
-    protected $description = 'Evalúa guardias entre las 17:00 y las 09:00 del día siguiente.';
+    protected $description = 'Evalúa si hubo inicio de guardia entre las 17:00 y las 09:00 del día siguiente.';
 
     public function handle(): int
     {
@@ -28,7 +28,7 @@ class NotifyMissingGuardia extends Command
 
         [$inicio, $fin] = $this->getPeriodo($hora);
 
-        // A las 09:00 confirma si hubo algún inicio durante todo el periodo.
+        // A las 09:00 valida todo el periodo completo.
         if ($hora === '09:00') {
             $huboInicio = Guardias::query()
                 ->whereBetween('dateInit', [$inicio, $fin])
@@ -36,21 +36,35 @@ class NotifyMissingGuardia extends Command
 
             if ($huboInicio) {
                 $this->info('Se registró al menos un inicio de guardia durante el periodo.');
+
+                Log::info('guardias:start-found', [
+                    'schedule' => $hora,
+                    'period_start' => $inicio->toDateTimeString(),
+                    'period_end' => $fin->toDateTimeString(),
+                    'now' => now()->toDateTimeString(),
+                ]);
+
                 return Command::SUCCESS;
             }
 
             return $this->notifyFinalMissing($inicio, $fin);
         }
 
-        // A las 21:00 y 00:00 verifica si existe una guardia activa del periodo.
-        $hasActiveGuardia = Guardias::query()
-            ->whereNull('dateFinish')
-            ->where('status', 1)
+        // A las 21:00 y 00:00 solo valida nuevos inicios desde las 17:00.
+        $huboInicio = Guardias::query()
             ->whereBetween('dateInit', [$inicio, now()])
             ->exists();
 
-        if ($hasActiveGuardia) {
-            $this->info('Existe una guardia activa dentro del periodo.');
+        if ($huboInicio) {
+            $this->info('Ya se registró un inicio de guardia dentro del periodo.');
+
+            Log::info('guardias:start-found', [
+                'schedule' => $hora,
+                'period_start' => $inicio->toDateTimeString(),
+                'checked_until' => now()->toDateTimeString(),
+                'now' => now()->toDateTimeString(),
+            ]);
+
             return Command::SUCCESS;
         }
 
@@ -60,14 +74,30 @@ class NotifyMissingGuardia extends Command
     private function getPeriodo(string $hora): array
     {
         if ($hora === '21:00') {
-            $inicio = now()->copy()->startOfDay()->setTime(17, 0);
-            $fin = now()->copy()->addDay()->startOfDay()->setTime(9, 0);
+            $inicio = now()
+                ->copy()
+                ->startOfDay()
+                ->setTime(17, 0);
+
+            $fin = now()
+                ->copy()
+                ->addDay()
+                ->startOfDay()
+                ->setTime(9, 0);
 
             return [$inicio, $fin];
         }
 
-        $inicio = now()->copy()->subDay()->startOfDay()->setTime(17, 0);
-        $fin = now()->copy()->startOfDay()->setTime(9, 0);
+        $inicio = now()
+            ->copy()
+            ->subDay()
+            ->startOfDay()
+            ->setTime(17, 0);
+
+        $fin = now()
+            ->copy()
+            ->startOfDay()
+            ->setTime(9, 0);
 
         return [$inicio, $fin];
     }
@@ -80,13 +110,14 @@ class NotifyMissingGuardia extends Command
             new GuardiaMissingMail($url)
         );
 
-        $this->info("{$hora}: No hay guardia activa. Recordatorio enviado.");
+        $this->info("{$hora}: No se registró inicio de guardia. Recordatorio enviado.");
 
         Log::warning('guardias:missing-reminder', [
             'schedule' => $hora,
             'to' => self::DESTINATARIO,
             'period_start' => $inicio->toDateTimeString(),
             'period_end' => $fin->toDateTimeString(),
+            'checked_until' => now()->toDateTimeString(),
             'now' => now()->toDateTimeString(),
         ]);
 

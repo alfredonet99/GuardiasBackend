@@ -1,35 +1,59 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Guardia No Iniciada</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height:1.5; color:#111827;">
-  <h2 style="margin:0 0 12px 0; font-size:18px;">
-    Recordatorio del sistema: Guardia pendiente
-  </h2>
 
-  <p style="margin:0 0 10px 0;">
-    Hola equipo.
-  </p>
+<body style="margin:0; padding:0; background:#f4f4f4; font-family:Arial, Helvetica, sans-serif;">
 
-  <p style="margin:0 0 10px 0;">
-    El sistema detectó que actualmente no existe una guardia activa registrada.
-  </p>
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+        <td align="center" style="padding:30px 15px;">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:600px; background:#ffffff; border-radius:8px; overflow:hidden;">
+                <tr>
+                    <td align="center" style=" background:#1f2937; padding:25px; color:#ffffff;">
+                         <h1 style="margin:0; font-size:24px; font-weight:600;">
+                            Guardia no iniciada
+                        </h1>
+                    </td>
+                </tr>
 
-  <p style="margin:0 0 10px 0;">
-    Para continuar con la operación, ingresa al sistema desde este enlace:
-  </p>
+                <tr>
+                    <td style="padding:25px 30px;">
+                      <p style="color:#374151; font-size:16px; line-height:1.6;">
+                            Hola equipo. <br> El sistema detectó que actualmente no existe una guardia activa registrada.
+                      </p>
 
-  <p style="margin:0 0 14px 0;">
-    <a href="{{ $url }}" style="color:#1d4ed8; text-decoration:underline;">
-      {{ $url }}
-    </a>
-  </p>
+                      <table width="100%" cellpadding="0" cellspacing="0" style="margin:25px 0; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px;">
+                        <tr>
+                          <td style="padding:20px;">
+                            <p style=" margin:0 0 10px 0; color:#111827; font-size:15px;">
+                              <strong> Para continuar con la operación, ingresa al siguiente enlace:</strong><br>
+                                <a href="{{ $url }}" style="color:#1d4ed8; text-decoration:underline;">
+										              {{ $url }}
+										            </a>
+                            </p>
 
-  <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;">
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                </tr>
 
-  <p style="margin:0; color:#6b7280; font-size:12px;">
-    Mensaje automático. Si ya se inició una guardia recientemente, puedes ignorar este aviso.
-  </p>
+                <tr>
+                    <td align="center" style="padding:0px; background:#f9fafb; color:#6b7280; font-size:12px;">
+                        Este mensaje fue generado automáticamente por el sistema.
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
 </body>
 </html>
