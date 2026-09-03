@@ -87,6 +87,7 @@ public function send(Request $request, $guardia)
 private function guardiaCloseRecipient(): string
 {
     return 'operationsstratosphere@stratospherecorp.com';
+    
 }
 
     private function esc($value): string
@@ -365,7 +366,6 @@ private function guardiaCloseRecipient(): string
 
         $html .= '
             <div style="margin-top:18px;color:#b6c2d2;font-size:12px;text-align:center;">
-                Este mensaje fue generado automáticamente por el sistema.
             </div>
         </div>';
 
